@@ -1,0 +1,14 @@
+@import url("https://fonts.googleapis.com/css2?family=Datatype:wght@100..900&display=swap");
+@import "tailwindcss";
+@plugin "daisyui";
+
+/* * {
+  font-family: "Datatype", monospace;
+  font-style: normal;
+} */
+
+#data {
+  font-family: "Datatype", monospace;
+  font-style: normal;
+  font-size: 40px;
+}
