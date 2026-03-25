@@ -20,7 +20,7 @@ export const DashboardTemplate = ({ reports, canEdit, onDetail, onEdit, onDelete
           <input type="date" value={selectedDate || ""} onChange={e => setSelectedDate(e.target.value)} style={{ background: T.surface2, border: `1px solid ${T.border}`, borderRadius: T.r, color: T.text, fontSize: 13, padding: "6px 10px", outline: "none", cursor: "pointer" }} />
         </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 13, color: T.muted }}>Total Masuk Burning Room:</span>
+          <span style={{ fontSize: 13, color: T.muted }}>Barang Masuk:</span>
           <TextInput type="number" value={burningInQty} onChange={setBurningInQty} placeholder="Ketik kuantitas..." style={{ width: 140 }} />
         </div>
       </div>
