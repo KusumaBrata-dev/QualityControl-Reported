@@ -99,57 +99,63 @@ export const NavbarOrganism = ({ user, tab, onTabChange, canEdit, isAdmin, onNew
 );
 
 /** DashboardKPIs — 4-card KPI grid + alert */
-export const DashboardKPIs = ({ reports }) => {
-  const pass  = reports.filter(r => r.overall_status === "pass").length;
-  const fail  = reports.filter(r => r.overall_status === "fail").length;
-  const total = reports.reduce((a, r) => a + r.qty_inspected, 0);
-  const avgDR = reports.length ? (reports.reduce((a, r) => a + r.defect_rate, 0) / reports.length).toFixed(2) : "0.00";
-  const stR   = reports.filter(r => r.station === "Repair").length;
-  const stQ   = reports.filter(r => r.station === "QA").length;
-  const stA   = reports.filter(r => r.station === "Assembly").length;
+export const DashboardKPIs = ({ reports, burningInQty }) => {
+  const totFail = reports.reduce((a, r) => a + (Number(r.qty_fail) || 0), 0);
+  const totInsp = reports.reduce((a, r) => a + (Number(r.qty_inspected) || 0), 0);
+  
+  // DR = Total Fail / Burning In (if provided). Else fallback to Total Fail / Total Inspected.
+  const baseQty = burningInQty > 0 ? burningInQty : totInsp;
+  const drRate  = baseQty > 0 ? ((totFail / baseQty) * 100).toFixed(2) : "0.00";
+
   return (
     <>
-      {fail > 0 && (
+      {totFail > 0 && (
         <div style={{ padding: "12px 16px", borderRadius: T.r, fontSize: 13, background: "rgba(210,153,34,.1)", border: "1px solid rgba(210,153,34,.25)", color: T.yellow, marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}>
-          ⚠ Terdapat <strong>{fail} batch FAIL</strong> – segera lakukan tindakan korektif!
+          ⚠ Terdapat <strong>{totFail} unit REJECT</strong> pada hari ini – perhatikan defect rate!
         </div>
       )}
       <div className="qc-kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 20 }}>
-        <KpiCard colorKey="blue"   icon="📋" label="Total Laporan"   value={reports.length}          sub="Semua batch"               />
-        <KpiCard colorKey="green"  icon="🔍" label="Total Inspected" value={total.toLocaleString()}  sub="Unit diperiksa"            />
-        <KpiCard colorKey="yellow" icon="📉" label="Avg Defect Rate" value={`${avgDR}%`}             sub="Target < 3%"               />
-        <KpiCard colorKey="red"    icon="🚫" label="Batch Fail"      value={fail}                    sub={`R:${stR} QA:${stQ} A:${stA}`} />
+        <KpiCard colorKey="blue"   icon="🔥" label="Masuk Burning Room" value={burningInQty || "-"} />
+        <KpiCard colorKey="green"  icon="🔍" label="Total Diperiksa" value={totInsp.toLocaleString()} />
+        <KpiCard colorKey="red"    icon="🚫" label="Total Defect / Reject" value={totFail} />
+        <KpiCard colorKey="yellow" icon="📉" label="Defect Rate %" value={`${drRate}%`} sub={burningInQty ? "Dari Total Burning" : "Dari Total Diperiksa"} />
       </div>
     </>
   );
 };
 
 /** DashboardCharts — Pie (status) + Bar (defect rate per varian), filterable by date */
-export const DashboardCharts = ({ reports, selectedDate, onDateChange }) => {
+export const DashboardCharts = ({ reports, selectedDate, burningInQty }) => {
   const filtered = selectedDate ? reports.filter(r => (r.inspection_date || "").startsWith(selectedDate)) : reports;
-  const pass = filtered.filter(r => r.overall_status === "pass").length;
-  const fail = filtered.filter(r => r.overall_status === "fail").length;
-  const pieData = [{ name: "Pass", value: pass }, { name: "Fail", value: fail }];
-  const barData = [1, 2, 3, 4].map(pid => {
-    const rs   = filtered.filter(r => r.product_id === pid);
-    const prod = PRODUCTS[pid];
-    return { name: `${prod.model} – ${prod.color}`, value: rs.length ? +(rs.reduce((a, r) => a + r.defect_rate, 0) / rs.length).toFixed(2) : 0, fill: COLOR_HEX[prod.color] };
+  
+  const passQty = filtered.reduce((a, r) => a + (Number(r.qty_pass) || 0), 0);
+  const failQty = filtered.reduce((a, r) => a + (Number(r.qty_fail) || 0), 0);
+  // Belum Diperiksa (hanya relevan jika burningInQty dimasukkan)
+  const belumDiperiksa = burningInQty > 0 ? Math.max(0, burningInQty - (passQty + failQty)) : 0;
+
+  const pieData = burningInQty > 0 
+    ? [{ name: "Pass", value: passQty }, { name: "Fail", value: failQty }, { name: "Belum Diperiksa", value: belumDiperiksa }]
+    : [{ name: "Pass", value: passQty }, { name: "Fail", value: failQty }];
+
+  const PIE_COLORS = burningInQty > 0 ? [T.green, T.red, T.muted2] : [T.green, T.red];
+
+  const barData = Object.values(PRODUCTS).map(prod => {
+    const rs   = filtered.filter(r => r.product_id === prod.id);
+    const varTotalInsp = rs.reduce((a, r) => a + (Number(r.qty_inspected)||0), 0);
+    const varTotalFail = rs.reduce((a, r) => a + (Number(r.qty_fail)||0), 0);
+    // Defect rate per varian menggunakan basis total diperiksa karena kita gak tau burningin per varian
+    const rate = varTotalInsp > 0 ? +(varTotalFail / varTotalInsp * 100).toFixed(2) : 0;
+    return { name: `${prod.model} – ${prod.color}`, value: rate, fill: COLOR_HEX[prod.color] };
   });
-  const PIE_COLORS = [T.green, T.red];
+
   const ttStyle = { background: T.surface2, border: `1px solid ${T.border}`, borderRadius: T.r, color: T.text };
   const noData = filtered.length === 0;
   return (
     <div className="qc-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 16, marginBottom: 18 }}>
       <Card>
-        <CardHeader title="Status Batch" actions={
-          <input
-            type="date" value={selectedDate || ""}
-            onChange={e => onDateChange(e.target.value)}
-            style={{ background: T.surface2, border: `1px solid ${T.border}`, borderRadius: T.r, color: T.muted, fontSize: 12, padding: "4px 8px", outline: "none", cursor: "pointer" }}
-          />
-        } />
+        <CardHeader title="Perbandingan Total Masuk vs Inspeksi" />
         <div style={{ padding: 20, height: 260 }}>
-          {noData ? (
+          {noData && !burningInQty ? (
             <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: T.muted, gap: 8 }}>
               <div style={{ fontSize: 32 }}>📭</div>
               <div style={{ fontSize: 13 }}>Tidak ada data untuk tanggal ini</div>
@@ -157,10 +163,10 @@ export const DashboardCharts = ({ reports, selectedDate, onDateChange }) => {
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={pieData} cx="50%" cy="45%" innerRadius={60} outerRadius={90} dataKey="value" paddingAngle={3}>
+                <Pie data={pieData} cx="50%" cy="45%" innerRadius={55} outerRadius={85} dataKey="value" paddingAngle={2}>
                   {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i]} />)}
                 </Pie>
-                <Tooltip contentStyle={ttStyle} />
+                <Tooltip contentStyle={ttStyle} formatter={(v) => [v, "Qty"]} />
                 <Legend wrapperStyle={{ color: T.muted, fontSize: 12 }} />
               </PieChart>
             </ResponsiveContainer>

@@ -8,13 +8,25 @@ import { DashboardKPIs, DashboardCharts, ReportTable, MatrixOrganism, UserGrid }
 export const DashboardTemplate = ({ reports, canEdit, onDetail, onEdit, onDelete, onNewReport }) => {
   const todayStr = new Date().toISOString().slice(0, 10);
   const [selectedDate, setSelectedDate] = React.useState(todayStr);
+  const [burningInQty, setBurningInQty] = React.useState("");
 
   const todayReports = selectedDate ? reports.filter(r => (r.inspection_date || "").startsWith(selectedDate)) : reports;
 
   return (
     <div>
-      <DashboardKPIs reports={todayReports} />
-      <DashboardCharts reports={reports} selectedDate={selectedDate} onDateChange={setSelectedDate} />
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", marginBottom: 16, background: T.surface, padding: "12px 16px", borderRadius: T.r2, border: `1px solid ${T.border}` }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 13, color: T.muted }}>Filter Hari:</span>
+          <input type="date" value={selectedDate || ""} onChange={e => setSelectedDate(e.target.value)} style={{ background: T.surface2, border: `1px solid ${T.border}`, borderRadius: T.r, color: T.text, fontSize: 13, padding: "6px 10px", outline: "none", cursor: "pointer" }} />
+        </div>
+        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
+          <span style={{ fontSize: 13, color: T.muted }}>Total Masuk Burning Room:</span>
+          <TextInput type="number" value={burningInQty} onChange={setBurningInQty} placeholder="Ketik kuantitas..." style={{ width: 140 }} />
+        </div>
+      </div>
+
+      <DashboardKPIs reports={todayReports} burningInQty={Number(burningInQty) || 0} />
+      <DashboardCharts reports={reports} selectedDate={selectedDate} burningInQty={Number(burningInQty) || 0} />
       <Card>
         <CardHeader
           title={`Laporan QC Terbaru — ${selectedDate}`}
