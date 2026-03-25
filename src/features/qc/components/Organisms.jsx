@@ -502,10 +502,7 @@ export const ReportFormOrganism = ({ open, onClose, editReport, onSave, showToas
       <SectionHeader icon="📝">Catatan</SectionHeader>
       <TextareaInput value={form.notes} onChange={v => setF("notes", v)} placeholder="Catatan tambahan inspeksi…" />
 
-      <SectionHeader icon="☑">Checkpoint QC</SectionHeader>
-      <div style={{ border: `1px solid ${T.border}`, borderRadius: T.r2, overflow: "hidden" }}>
-        {cpState.map((cp, i) => <CheckpointRow key={i} cp={cp} index={i} onChange={updateCp} readOnly={false} />)}
-      </div>
+
     </ModalShell>
   );
 };
