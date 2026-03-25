@@ -199,9 +199,9 @@ export const DashboardCharts = ({ reports, selectedDate, onDateChange }) => {
 /** ReportTable — full / mini mode */
 export const ReportTable = ({ data, mini = false, canEdit, onDetail, onEdit, onDelete }) => {
   if (!data.length) return <div style={{ padding: 32, textAlign: "center", color: T.muted }}>Tidak ada data</div>;
-  const fullCols  = ["Report No","Model","Warna","Batch","Tgl Inspeksi","Inspector","Produksi","Diperiksa","Pass","Fail","Defect%","Stasiun","SN","Status","Aksi"];
-  const miniCols  = ["Report No","Model","Warna","Batch","Tgl Inspeksi","Inspector","Diperiksa","Pass","Fail","Defect%","Status","Aksi"];
-  const numCols   = new Set(["Produksi","Diperiksa","Pass","Fail","Defect%"]);
+  const fullCols  = ["Report No","Model","Warna","Batch","Tgl Inspeksi","Burning In","Produksi","Diperiksa","Pass","Fail","Defect%","Stasiun","SN","Status","Aksi"];
+  const miniCols  = ["Report No","Model","Warna","Batch","Tgl Inspeksi","Burning In","Diperiksa","Pass","Fail","Defect%","Status","Aksi"];
+  const numCols   = new Set(["Burning In","Produksi","Diperiksa","Pass","Fail","Defect%"]);
   const cols      = mini ? miniCols : fullCols;
   return (
     <div style={{ overflowX: "auto" }}>
@@ -222,7 +222,7 @@ export const ReportTable = ({ data, mini = false, canEdit, onDetail, onEdit, onD
                 <td style={{ padding: "12px 14px" }}><ColorTag color={r.color} /></td>
                 <td style={{ padding: "12px 14px" }}><span style={{ fontFamily: T.mono, fontSize: 12, color: T.muted }}>{r.batch_no}</span></td>
                 <td style={{ padding: "12px 14px", fontSize: 12, color: T.muted }}>{(r.inspection_date || "").slice(0, 10)}</td>
-                <td style={{ padding: "12px 14px" }}>{r.inspector}</td>
+                <td style={{ padding: "12px 14px", textAlign: "right", fontFamily: T.mono, color: T.blue }}>{r.qty_burning_in || "-"}</td>
                 {!mini && <td style={{ padding: "12px 14px", textAlign: "right", fontFamily: T.mono }}>{r.qty_produced}</td>}
                 <td style={{ padding: "12px 14px", textAlign: "right", fontFamily: T.mono }}>{r.qty_inspected}</td>
                 <td style={{ padding: "12px 14px", textAlign: "right", fontFamily: T.mono, color: T.green }}>{r.qty_pass}</td>
@@ -356,8 +356,7 @@ export const ReportFormOrganism = ({ open, onClose, editReport, onSave, showToas
     product_id: "", batch_no: "",
     production_date: new Date().toISOString().split("T")[0],
     inspection_date: new Date().toISOString().slice(0, 16),
-    inspector: "", shift: "A",
-    qty_produced: "", qty_inspected: "", qty_pass: "", qty_fail: "", qty_rework: "",
+    qty_burning_in: "", qty_produced: "", qty_inspected: "", qty_pass: "", qty_fail: "", qty_rework: "",
     defect_cat: "", defect_loc: "", station: "", overall_status: "pass", notes: "",
   });
 
@@ -373,8 +372,7 @@ export const ReportFormOrganism = ({ open, onClose, editReport, onSave, showToas
       setForm({
         product_id: r.product_id, batch_no: r.batch_no,
         production_date: r.production_date, inspection_date: r.inspection_date,
-        inspector: `${r.inspector}|${r.inspector_id}`, shift: r.shift,
-        qty_produced: r.qty_produced, qty_inspected: r.qty_inspected,
+        qty_burning_in: r.qty_burning_in || "", qty_produced: r.qty_produced, qty_inspected: r.qty_inspected,
         qty_pass: r.qty_pass, qty_fail: r.qty_fail, qty_rework: r.qty_rework,
         defect_cat: r.defect_cat || "", defect_loc: r.defect_loc || "",
         station: r.station || "", overall_status: r.overall_status, notes: r.notes || "",
@@ -399,9 +397,9 @@ export const ReportFormOrganism = ({ open, onClose, editReport, onSave, showToas
   };
 
   const handleSave = () => {
-    if (!form.product_id || !form.batch_no || !form.inspector) { showToast("Produk, Batch, dan Inspector wajib diisi!", "err"); return; }
-    const [inspName, inspId] = form.inspector.split("|");
+    if (!form.product_id || !form.batch_no) { showToast("Produk dan Batch wajib diisi!", "err"); return; }
     const prod          = PRODUCTS[form.product_id];
+    const qty_burning_in = Number(form.qty_burning_in) || 0;
     const qty_inspected = Number(form.qty_inspected) || 0;
     const qty_fail      = Number(form.qty_fail)      || 0;
     const defect_rate   = qty_inspected ? +(qty_fail / qty_inspected * 100).toFixed(2) : 0;
@@ -409,8 +407,8 @@ export const ReportFormOrganism = ({ open, onClose, editReport, onSave, showToas
       ...(editReport ? { id: editReport.id, created_at: editReport.created_at } : { created_at: new Date().toISOString() }),
       product_id: Number(form.product_id), model: prod.model, color: prod.color,
       batch_no: form.batch_no, production_date: form.production_date,
-      inspection_date: form.inspection_date, inspector: inspName, inspector_id: inspId,
-      shift: form.shift,
+      inspection_date: form.inspection_date,
+      qty_burning_in,
       qty_produced: Number(form.qty_produced) || 0, qty_inspected,
       qty_pass: Number(form.qty_pass) || 0, qty_fail,
       qty_rework: Number(form.qty_rework) || 0, defect_rate,
@@ -425,8 +423,15 @@ export const ReportFormOrganism = ({ open, onClose, editReport, onSave, showToas
     <ModalShell open={open} onClose={onClose} title={editReport ? "✏️ Edit Laporan QC" : "+ Laporan QC Baru"} maxWidth={840}
       footer={<><Btn variant="ghost" onClick={onClose}>Batal</Btn><Btn variant="success" onClick={handleSave}>💾 Simpan Laporan</Btn></>}>
 
-      <SectionHeader icon="📦" first>Informasi Produk</SectionHeader>
-      <div className="qc-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+      <SectionHeader icon="🔢" first>Data Kuantitas</SectionHeader>
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 14, marginBottom: 20 }}>
+        {[["Burning In","qty_burning_in"],["Diproduksi","qty_produced"],["Diperiksa","qty_inspected"],["Pass","qty_pass"],["Fail / Reject","qty_fail"],["Rework","qty_rework"]].map(([lbl, key]) => (
+          <div key={key}><FieldLabel>{lbl}</FieldLabel><TextInput type="number" value={form[key]} onChange={v => setF(key, v)} placeholder="0" style={{ fontFamily: T.mono }} /></div>
+        ))}
+      </div>
+
+      <SectionHeader icon="📦">Informasi Produk</SectionHeader>
+      <div className="qc-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 20 }}>
         <div><FieldLabel>Produk & Warna *</FieldLabel>
           <SelectInput value={form.product_id} onChange={v => setF("product_id", v)}>
             <option value="">— Pilih Produk —</option>
@@ -437,30 +442,6 @@ export const ReportFormOrganism = ({ open, onClose, editReport, onSave, showToas
         <div><FieldLabel>Batch No *</FieldLabel><TextInput value={form.batch_no} onChange={v => setF("batch_no", v)} placeholder="B-WM1091-0001" /></div>
         <div><FieldLabel>Tanggal Produksi *</FieldLabel><TextInput type="date" value={form.production_date} onChange={v => setF("production_date", v)} /></div>
         <div><FieldLabel>Tanggal & Waktu Inspeksi *</FieldLabel><TextInput type="datetime-local" value={form.inspection_date} onChange={v => setF("inspection_date", v)} /></div>
-      </div>
-
-      <SectionHeader icon="👷">Inspector</SectionHeader>
-      <div className="qc-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-        <div><FieldLabel>Inspector *</FieldLabel>
-          <SelectInput value={form.inspector} onChange={v => setF("inspector", v)}>
-            <option value="">— Pilih Inspector —</option>
-            {INSPECTORS.map(i => <option key={i.v} value={i.v}>{i.l}</option>)}
-          </SelectInput>
-        </div>
-        <div><FieldLabel>Shift</FieldLabel>
-          <SelectInput value={form.shift} onChange={v => setF("shift", v)}>
-            <option value="A">Shift A (06:00–14:00)</option>
-            <option value="B">Shift B (14:00–22:00)</option>
-            <option value="C">Shift C (22:00–06:00)</option>
-          </SelectInput>
-        </div>
-      </div>
-
-      <SectionHeader icon="🔢">Data Kuantitas</SectionHeader>
-      <div className="qc-grid-5" style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 14 }}>
-        {[["Diproduksi","qty_produced"],["Diperiksa","qty_inspected"],["Pass","qty_pass"],["Fail / Reject","qty_fail"],["Rework","qty_rework"]].map(([lbl, key]) => (
-          <div key={key}><FieldLabel>{lbl}</FieldLabel><TextInput type="number" value={form[key]} onChange={v => setF(key, v)} placeholder="0" style={{ fontFamily: T.mono }} /></div>
-        ))}
       </div>
 
       <SectionHeader icon="📟">Serial Number Unit Reject</SectionHeader>
@@ -520,8 +501,7 @@ export const DetailModal = ({ open, onClose, report, canEdit, onEdit }) => {
 
       {/* Info grid */}
       <div className="qc-grid-3" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 16 }}>
-        {[["Model",report.model],["Warna",<ColorTag color={report.color} />],["Inspector",report.inspector],
-          ["Shift",`Shift ${report.shift}`],["Tgl Produksi",report.production_date],["Tgl Inspeksi",(report.inspection_date||"").substring(0,16)]
+        {[["Model",report.model],["Warna",<ColorTag color={report.color} />],["Tgl Produksi",report.production_date],["Tgl Inspeksi",(report.inspection_date||"").substring(0,16)]
         ].map(([l, v]) => (
           <div key={l} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.r, padding: "11px 14px" }}>
             <div style={{ fontSize: 10, color: T.muted, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 4 }}>{l}</div>
@@ -531,8 +511,8 @@ export const DetailModal = ({ open, onClose, report, canEdit, onEdit }) => {
       </div>
 
       {/* Qty KPIs */}
-      <div className="qc-grid-5" style={{ display: "grid", gridTemplateColumns: "repeat(5,1fr)", gap: 8, marginBottom: 16 }}>
-        {[["Produksi",report.qty_produced,T.text],["Diperiksa",report.qty_inspected,T.blue],
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 8, marginBottom: 16 }}>
+        {[["Burning In",report.qty_burning_in||"-",T.blue],["Produksi",report.qty_produced,T.text],["Diperiksa",report.qty_inspected,T.text],
           ["Pass",report.qty_pass,T.green],["Fail",report.qty_fail,T.red],["Rework",report.qty_rework,T.yellow]
         ].map(([l, v, c]) => (
           <div key={l} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.r, padding: 10, textAlign: "center" }}>
