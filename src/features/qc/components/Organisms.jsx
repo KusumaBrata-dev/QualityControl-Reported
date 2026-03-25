@@ -81,7 +81,7 @@ export const NavbarOrganism = ({ user, tab, onTabChange, canEdit, isAdmin, onNew
         {[
           { key: "dashboard", label: "📊 Dashboard" },
           { key: "reports",   label: "📋 Laporan QC" },
-          { key: "matrix",    label: "🎨 Model Matrix" },
+          { key: "matrix",    label: "🎨 Defect Compare" },
           ...(isAdmin ? [{ key: "users", label: "👥 Kelola User" }] : []),
         ].map(t => (
           <button key={t.key} onClick={() => onTabChange(t.key)} style={{ padding: "6px 14px", borderRadius: 6, border: "none", background: tab === t.key ? "rgba(47,129,247,.15)" : "transparent", color: tab === t.key ? T.blue : T.muted, fontSize: 13, fontWeight: 600, fontFamily: T.font, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>{t.label}</button>
@@ -114,11 +114,10 @@ export const DashboardKPIs = ({ reports, burningInQty }) => {
           ⚠ Terdapat <strong>{totFail} unit REJECT</strong> pada hari ini – perhatikan defect rate!
         </div>
       )}
-      <div className="qc-kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 14, marginBottom: 20 }}>
-        <KpiCard colorKey="blue"   icon="🔥" label="Masuk Burning Room" value={burningInQty || "-"} />
-        <KpiCard colorKey="green"  icon="🔍" label="Total Diperiksa" value={totInsp.toLocaleString()} />
+      <div className="qc-kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, marginBottom: 20 }}>
+        <KpiCard colorKey="blue"   icon="🔥" label="Barang Masuk" value={burningInQty || "-"} />
         <KpiCard colorKey="red"    icon="🚫" label="Total Defect / Reject" value={totFail} />
-        <KpiCard colorKey="yellow" icon="📉" label="Defect Rate %" value={`${drRate}%`} sub={burningInQty ? "Dari Total Burning" : "Dari Total Diperiksa"} />
+        <KpiCard colorKey="yellow" icon="📉" label="Defect Rate %" value={`${drRate}%`} sub={burningInQty ? "Dari Total Barang Masuk" : "Dari Total Diperiksa"} />
       </div>
     </>
   );
@@ -205,9 +204,9 @@ export const DashboardCharts = ({ reports, selectedDate, burningInQty }) => {
 /** ReportTable — full / mini mode */
 export const ReportTable = ({ data, mini = false, canEdit, onDetail, onEdit, onDelete }) => {
   if (!data.length) return <div style={{ padding: 32, textAlign: "center", color: T.muted }}>Tidak ada data</div>;
-  const fullCols  = ["Report No","Model","Warna","Batch","Tgl Inspeksi","Burning In","Produksi","Diperiksa","Pass","Fail","Defect%","Stasiun","SN","Status","Aksi"];
-  const miniCols  = ["Report No","Model","Warna","Batch","Tgl Inspeksi","Burning In","Diperiksa","Pass","Fail","Defect%","Status","Aksi"];
-  const numCols   = new Set(["Burning In","Produksi","Diperiksa","Pass","Fail","Defect%"]);
+  const fullCols  = ["Report No","Model","Warna","Batch","Tgl Inspeksi","Barang Masuk","Produksi","Pass","Fail","Defect%","Stasiun","SN","Status","Aksi"];
+  const miniCols  = ["Report No","Model","Warna","Batch","Tgl Inspeksi","Barang Masuk","Pass","Fail","Defect%","Status","Aksi"];
+  const numCols   = new Set(["Barang Masuk","Produksi","Pass","Fail","Defect%"]);
   const cols      = mini ? miniCols : fullCols;
   return (
     <div style={{ overflowX: "auto" }}>
@@ -230,7 +229,6 @@ export const ReportTable = ({ data, mini = false, canEdit, onDetail, onEdit, onD
                 <td style={{ padding: "12px 14px", fontSize: 12, color: T.muted }}>{(r.inspection_date || "").slice(0, 10)}</td>
                 <td style={{ padding: "12px 14px", textAlign: "right", fontFamily: T.mono, color: T.blue }}>{r.qty_burning_in || "-"}</td>
                 {!mini && <td style={{ padding: "12px 14px", textAlign: "right", fontFamily: T.mono }}>{r.qty_produced}</td>}
-                <td style={{ padding: "12px 14px", textAlign: "right", fontFamily: T.mono }}>{r.qty_inspected}</td>
                 <td style={{ padding: "12px 14px", textAlign: "right", fontFamily: T.mono, color: T.green }}>{r.qty_pass}</td>
                 <td style={{ padding: "12px 14px", textAlign: "right", fontFamily: T.mono, color: T.red }}>{r.qty_fail}</td>
                 <td style={{ padding: "12px 14px", textAlign: "right" }}><span style={{ fontFamily: T.mono, fontWeight: 700, color: drColor(rate) }}>{rate.toFixed(2)}%</span></td>
@@ -431,7 +429,7 @@ export const ReportFormOrganism = ({ open, onClose, editReport, onSave, showToas
 
       <SectionHeader icon="🔢" first>Data Kuantitas</SectionHeader>
       <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 14, marginBottom: 20 }}>
-        {[["Burning In","qty_burning_in"],["Diproduksi","qty_produced"],["Diperiksa","qty_inspected"],["Pass","qty_pass"],["Fail / Reject","qty_fail"],["Rework","qty_rework"]].map(([lbl, key]) => (
+        {[["Barang Masuk","qty_burning_in"],["Diproduksi","qty_produced"],["Pass","qty_pass"],["Fail / Reject","qty_fail"],["Rework","qty_rework"]].map(([lbl, key]) => (
           <div key={key}><FieldLabel>{lbl}</FieldLabel><TextInput type="number" value={form[key]} onChange={v => setF(key, v)} placeholder="0" style={{ fontFamily: T.mono }} /></div>
         ))}
       </div>
@@ -517,8 +515,8 @@ export const DetailModal = ({ open, onClose, report, canEdit, onEdit }) => {
       </div>
 
       {/* Qty KPIs */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(100px, 1fr))", gap: 8, marginBottom: 16 }}>
-        {[["Burning In",report.qty_burning_in||"-",T.blue],["Produksi",report.qty_produced,T.text],["Diperiksa",report.qty_inspected,T.text],
+      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 8, marginBottom: 16 }}>
+        {[["Barang Masuk",report.qty_burning_in||"-",T.blue],["Produksi",report.qty_produced,T.text],
           ["Pass",report.qty_pass,T.green],["Fail",report.qty_fail,T.red],["Rework",report.qty_rework,T.yellow]
         ].map(([l, v, c]) => (
           <div key={l} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.r, padding: 10, textAlign: "center" }}>
