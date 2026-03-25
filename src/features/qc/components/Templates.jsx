@@ -6,7 +6,7 @@ import { DashboardKPIs, DashboardCharts, ReportTable, MatrixOrganism, UserGrid }
 
 /** DashboardTemplate */
 export const DashboardTemplate = ({ reports, canEdit, onDetail, onEdit, onDelete, onNewReport }) => {
-  const todayStr = new Date().toISOString().slice(0, 10);
+  const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   const [selectedDate, setSelectedDate] = React.useState(todayStr);
   const [burningInQty, setBurningInQty] = React.useState("");
 

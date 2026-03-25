@@ -356,13 +356,16 @@ export const UserGrid = ({ users, currentUser, onEdit, onDelete, onChangePw }) =
 
 /** ReportFormOrganism — create / edit report modal */
 export const ReportFormOrganism = ({ open, onClose, editReport, onSave, showToast }) => {
-  const empty = () => ({
-    product_id: "", batch_no: "",
-    production_date: new Date().toISOString().split("T")[0],
-    inspection_date: new Date().toISOString().slice(0, 16),
-    qty_burning_in: "", qty_produced: "", qty_inspected: "", qty_pass: "", qty_fail: "", qty_rework: "",
-    defect_cat: "", defect_loc: "", station: "", overall_status: "pass", notes: "",
-  });
+  const empty = () => {
+    const localISO = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString();
+    return {
+      product_id: "", batch_no: "",
+      production_date: localISO.split("T")[0],
+      inspection_date: localISO.slice(0, 16),
+      qty_burning_in: "", qty_produced: "", qty_inspected: "", qty_pass: "", qty_fail: "", qty_rework: "",
+      defect_cat: "", defect_loc: "", station: "", overall_status: "pass", notes: "",
+    };
+  };
 
   const [form,    setForm]    = useState(empty());
   const [snList,  setSnList]  = useState([]);
