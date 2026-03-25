@@ -5,16 +5,35 @@ import { FilterField } from "./Molecules";
 import { DashboardKPIs, DashboardCharts, ReportTable, MatrixOrganism, UserGrid } from "./Organisms";
 
 /** DashboardTemplate */
-export const DashboardTemplate = ({ reports, canEdit, onDetail, onEdit, onDelete, onNewReport }) => (
-  <div>
-    <DashboardKPIs reports={reports} />
-    <DashboardCharts reports={reports} />
-    <Card>
-      <CardHeader title="Laporan QC Terbaru" actions={canEdit && <Btn variant="primary" size="sm" onClick={onNewReport}>+ Laporan Baru</Btn>} />
-      <ReportTable data={reports.slice(0, 8)} mini canEdit={canEdit} onDetail={onDetail} onEdit={onEdit} onDelete={onDelete} />
-    </Card>
-  </div>
-);
+export const DashboardTemplate = ({ reports, canEdit, onDetail, onEdit, onDelete, onNewReport }) => {
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const [selectedDate, setSelectedDate] = React.useState(todayStr);
+
+  const todayReports = selectedDate ? reports.filter(r => (r.inspection_date || "").startsWith(selectedDate)) : reports;
+
+  return (
+    <div>
+      <DashboardKPIs reports={todayReports} />
+      <DashboardCharts reports={reports} selectedDate={selectedDate} onDateChange={setSelectedDate} />
+      <Card>
+        <CardHeader
+          title={`Laporan QC Terbaru — ${selectedDate}`}
+          actions={canEdit && <Btn variant="primary" size="sm" onClick={onNewReport}>+ Laporan Baru</Btn>}
+        />
+        {todayReports.length === 0 ? (
+          <div style={{ display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", padding: "48px 24px", color: T.muted, gap: 12 }}>
+            <div style={{ fontSize: 42, opacity: 0.5 }}>📋</div>
+            <div style={{ fontWeight: 700, fontSize: 15 }}>Belum ada laporan pada tanggal ini</div>
+            <div style={{ fontSize: 13 }}>Laporan QC yang dibuat pada tanggal <strong style={{ color: T.text }}>{selectedDate}</strong> akan muncul di sini.</div>
+            {canEdit && <Btn variant="primary" size="sm" onClick={onNewReport} style={{ marginTop: 4 }}>+ Buat Laporan Baru</Btn>}
+          </div>
+        ) : (
+          <ReportTable data={todayReports.slice(0, 8)} mini canEdit={canEdit} onDetail={onDetail} onEdit={onEdit} onDelete={onDelete} />
+        )}
+      </Card>
+    </div>
+  );
+};
 
 /** ReportsTemplate — with filter bar */
 export const ReportsTemplate = ({ reports, canEdit, onDetail, onEdit, onDelete, onNewReport }) => {
