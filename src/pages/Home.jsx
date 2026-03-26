@@ -1,7 +1,8 @@
 import React from "react";
+import QCReportSystemMain from "../features/qc/QCReportSystemMain";
 
 const Home = () => {
-  return <div>Home</div>;
+  return <QCReportSystemMain />;
 };
 
 export default Home;
