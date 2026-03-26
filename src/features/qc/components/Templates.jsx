@@ -7,7 +7,7 @@ import { DashboardKPIs, DashboardCharts, ReportTable, MatrixOrganism, UserGrid }
 /** DashboardTemplate */
 export const DashboardTemplate = ({ reports, canEdit, onDetail, onEdit, onDelete, onNewReport }) => {
   const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-  const [selectedDate, setSelectedDate] = React.useState(todayStr);
+  const [selectedDate, setSelectedDate] = React.useState(() => reports.length ? reports[reports.length - 1]?.inspection_date?.slice(0, 10) : todayStr);
   const [burningInQty, setBurningInQty] = React.useState("");
 
   const todayReports = selectedDate ? reports.filter(r => (r.inspection_date || "").startsWith(selectedDate)) : reports;
@@ -29,7 +29,7 @@ export const DashboardTemplate = ({ reports, canEdit, onDetail, onEdit, onDelete
       <DashboardCharts reports={reports} selectedDate={selectedDate} burningInQty={Number(burningInQty) || 0} />
       <Card>
         <CardHeader
-          title={`Laporan QC Terbaru — ${selectedDate}`}
+          title={`Laporan QC Terbaru — ${selectedDate || "Semua Tanggal"}`}
           actions={canEdit && <Btn variant="primary" size="sm" onClick={onNewReport}>+ Laporan Baru</Btn>}
         />
         {todayReports.length === 0 ? (
@@ -63,7 +63,7 @@ export const ReportsTemplate = ({ reports, canEdit, onDetail, onEdit, onDelete, 
     if (status && r.overall_status !== status)          return false;
     if (date   && !r.inspection_date.startsWith(date)) return false;
     if (search) {
-      const s = `${genNo(r.id)} ${r.batch_no} ${r.inspector} ${r.model} ${r.color}`.toLowerCase();
+      const s = `${genNo(r.id, r.created_at)} ${r.batch_no} ${r.inspector} ${r.model} ${r.color}`.toLowerCase();
       if (!s.includes(search.toLowerCase())) return false;
     }
     return true;

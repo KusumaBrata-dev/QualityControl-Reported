@@ -1,4 +1,4 @@
-@import url("https://fonts.googleapis.com/css2?family=Datatype:wght@100..900&display=swap");
+
 @import "tailwindcss";
 @plugin "daisyui";
 
@@ -8,7 +8,7 @@
 } */
 
 #data {
-  font-family: "Datatype", monospace;
+  font-family: "IBM Plex Mono", monospace;
   font-style: normal;
   font-size: 40px;
 }

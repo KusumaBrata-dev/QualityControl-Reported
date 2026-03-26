@@ -106,3 +106,41 @@ export const ModalShell = ({ open, onClose, title, subtitle, maxWidth = 840, hea
     </div>
   );
 };
+
+/** ErrorBoundary — catches errors in child component tree */
+export class ErrorBoundary extends React.Component {
+  constructor(props) { super(props); this.state = { hasError: false, error: null }; }
+  static getDerivedStateFromError(error) { return { hasError: true, error }; }
+  componentDidCatch(error, errorInfo) { console.error("ErrorBoundary caught:", error, errorInfo); }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div style={{ padding: 40, textAlign: "center", color: T.red }}>
+          <h2>Oops, terjadi kesalahan.</h2>
+          <pre style={{ fontSize: 11, background: "rgba(248,81,73,.1)", padding: 10, borderRadius: T.r, marginTop: 10, textAlign: "left", overflowX: "auto" }}>
+            {this.state.error && this.state.error.toString()}
+          </pre>
+          <Btn variant="ghost" onClick={() => this.setState({ hasError: false })} style={{ marginTop: 20 }}>Coba Lagi</Btn>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+
+/** ConfirmModal — custom confirmation instead of window.confirm */
+export const ConfirmModal = ({ open, title, message, onConfirm, onCancel, confirmText = "Ya, Lanjutkan", confirmVariant = "red" }) => {
+  if (!open) return null;
+  return (
+    <div onClick={e => e.target === e.currentTarget && onCancel()} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", zIndex: 10000, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backdropFilter: "blur(4px)" }}>
+      <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, width: "100%", maxWidth: 400, padding: 24, boxShadow: "0 16px 40px rgba(0,0,0,.5)" }}>
+        <div style={{ fontSize: 18, fontWeight: 800, marginBottom: 8, color: T.text }}>{title || "Konfirmasi"}</div>
+        <div style={{ fontSize: 14, color: T.muted, marginBottom: 24 }}>{message}</div>
+        <div style={{ display: "flex", justifyContent: "flex-end", gap: 10 }}>
+          <Btn variant="ghost" onClick={onCancel}>Batal</Btn>
+          <Btn variant={confirmVariant} onClick={onConfirm}>{confirmText}</Btn>
+        </div>
+      </div>
+    </div>
+  );
+};

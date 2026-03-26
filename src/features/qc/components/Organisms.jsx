@@ -58,7 +58,6 @@ export const LoginOrganism = ({ users, onLogin }) => {
           {loading ? "⏳ Memverifikasi…" : "🔐 Masuk"}
         </button>
         <div style={{ textAlign: "center", marginTop: 20, fontSize: 11, color: T.muted2 }}>QC Report System v3.0 · React Edition</div>
-        <div style={{ textAlign: "center", marginTop: 8, fontSize: 10.5, color: T.muted2 }}>Demo: admin / admin123 &nbsp;·&nbsp; ahmad / operator &nbsp;·&nbsp; viewer / viewer</div>
       </div>
     </div>
   );
@@ -138,8 +137,8 @@ export const DashboardCharts = ({ reports, selectedDate, burningInQty }) => {
 
   const PIE_COLORS = burningInQty > 0 ? [T.green, T.red, T.muted2] : [T.green, T.red];
 
-  const barData = Object.values(PRODUCTS).map(prod => {
-    const rs   = filtered.filter(r => r.product_id === prod.id);
+  const barData = Object.entries(PRODUCTS).map(([id, prod]) => {
+    const rs   = filtered.filter(r => r.product_id === Number(id));
     const varTotalInsp = rs.reduce((a, r) => a + (Number(r.qty_inspected)||0), 0);
     const varTotalFail = rs.reduce((a, r) => a + (Number(r.qty_fail)||0), 0);
     // Defect rate per varian menggunakan basis total diperiksa karena kita gak tau burningin per varian
@@ -203,26 +202,35 @@ export const DashboardCharts = ({ reports, selectedDate, burningInQty }) => {
 
 /** ReportTable — full / mini mode */
 export const ReportTable = ({ data, mini = false, canEdit, onDetail, onEdit, onDelete }) => {
+  const [page, setPage] = useState(1);
+  useEffect(() => { setPage(1); }, [data.length]);
+
   if (!data.length) return <div style={{ padding: 32, textAlign: "center", color: T.muted }}>Tidak ada data</div>;
+  
+  const limit = mini ? 8 : 10;
+  const totalPages = Math.ceil(data.length / limit);
+  const currentData = mini ? data.slice(0, 8) : data.slice((page - 1) * limit, page * limit);
+
   const fullCols  = ["Report No","Model","Warna","Batch","Tgl Inspeksi","Barang Masuk","Produksi","Pass","Fail","Defect%","Stasiun","SN","Status","Aksi"];
   const miniCols  = ["Report No","Model","Warna","Batch","Tgl Inspeksi","Barang Masuk","Pass","Fail","Defect%","Status","Aksi"];
   const numCols   = new Set(["Barang Masuk","Produksi","Pass","Fail","Defect%"]);
   const cols      = mini ? miniCols : fullCols;
   return (
-    <div style={{ overflowX: "auto" }}>
-      <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
-        <thead>
-          <tr style={{ borderBottom: `1px solid ${T.border}` }}>
-            {cols.map(c => <th key={c} style={{ padding: "11px 14px", fontSize: 10.5, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: "1px", whiteSpace: "nowrap", textAlign: numCols.has(c) ? "right" : "left", background: T.surface }}>{c}</th>)}
-          </tr>
-        </thead>
-        <tbody>
-          {data.map(r => {
-            const rate    = r.defect_rate || 0;
-            const snCount = (r.serial_numbers || []).length;
-            return (
-              <tr key={r.id} style={{ borderBottom: `1px solid ${T.border2}`, transition: "background .1s" }}>
-                <td style={{ padding: "12px 14px" }}><span style={{ fontFamily: T.mono, fontSize: 12, color: T.blue }}>{genNo(r.id)}</span></td>
+    <>
+      <div style={{ overflowX: "auto" }}>
+        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+          <thead>
+            <tr style={{ borderBottom: `1px solid ${T.border}` }}>
+              {cols.map(c => <th key={c} style={{ padding: "11px 14px", fontSize: 10.5, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: "1px", whiteSpace: "nowrap", textAlign: numCols.has(c) ? "right" : "left", background: T.surface }}>{c}</th>)}
+            </tr>
+          </thead>
+          <tbody>
+            {currentData.map(r => {
+              const rate    = r.defect_rate || 0;
+              const snCount = (r.serial_numbers || []).length;
+              return (
+                <tr key={r.id} style={{ borderBottom: `1px solid ${T.border2}`, transition: "background .1s" }}>
+                  <td style={{ padding: "12px 14px" }}><span style={{ fontFamily: T.mono, fontSize: 12, color: T.blue }}>{genNo(r.id, r.created_at)}</span></td>
                 <td style={{ padding: "12px 14px" }}><strong>{r.model}</strong></td>
                 <td style={{ padding: "12px 14px" }}><ColorTag color={r.color} /></td>
                 <td style={{ padding: "12px 14px" }}><span style={{ fontFamily: T.mono, fontSize: 12, color: T.muted }}>{r.batch_no}</span></td>
@@ -248,6 +256,16 @@ export const ReportTable = ({ data, mini = false, canEdit, onDetail, onEdit, onD
         </tbody>
       </table>
     </div>
+    {!mini && totalPages > 1 && (
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderTop: `1px solid ${T.border}`, background: T.surface }}>
+        <span style={{ fontSize: 12, color: T.muted }}>Halaman {page} dari {totalPages}</span>
+        <div style={{ display: "flex", gap: 8 }}>
+          <Btn variant="ghost" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>← Prev</Btn>
+          <Btn variant="ghost" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next →</Btn>
+        </div>
+      </div>
+    )}
+    </>
   );
 };
 
@@ -501,7 +519,7 @@ export const DetailModal = ({ open, onClose, report, canEdit, onEdit }) => {
   const rate     = report.defect_rate || 0;
   const passRate = report.qty_inspected ? (report.qty_pass / report.qty_inspected * 100).toFixed(1) : 0;
   return (
-    <ModalShell open={open} onClose={onClose} title={genNo(report.id)} subtitle={`${report.batch_no} · ${(report.inspection_date || "").substring(0, 16)}`}
+    <ModalShell open={open} onClose={onClose} title={genNo(report.id, report.created_at)} subtitle={`${report.batch_no} · ${(report.inspection_date || "").substring(0, 16)}`}
       maxWidth={880}
       headerExtra={<StatusBadge status={report.overall_status} />}
       footer={<><Btn variant="ghost" onClick={onClose}>Tutup</Btn>{canEdit && <Btn variant="yellow_outline" onClick={() => { onClose(); onEdit(report.id); }}>✏️ Edit</Btn>}</>}>
@@ -593,7 +611,7 @@ export const UserFormOrganism = ({ open, onClose, editUser, onSave, users, showT
     if (!form.name || !form.username) { showToast("Nama dan Username wajib diisi!", "err"); return; }
     if (!editUser && !form.password)  { showToast("Password wajib untuk user baru!", "err"); return; }
     if (form.password && form.password !== form.password2) { showToast("Konfirmasi password tidak cocok!", "err"); return; }
-    if (form.password && form.password.length < 4)         { showToast("Password minimal 4 karakter!", "err"); return; }
+    if (form.password && (form.password.length < 8 || !/[a-zA-Z]/.test(form.password) || !/[0-9]/.test(form.password))) { showToast("Password min 8 char dgn huruf & angka!", "err"); return; }
     const dup = users.find(u => u.username === form.username.toLowerCase() && u.id !== editUser?.id);
     if (dup) { showToast("Username sudah digunakan!", "err"); return; }
     onSave({
@@ -628,7 +646,7 @@ export const UserFormOrganism = ({ open, onClose, editUser, onSave, users, showT
       </div>
       <SectionHeader>{editUser ? "Ganti Password (kosongkan jika tidak berubah)" : "Password"}</SectionHeader>
       <div className="qc-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-        <div><FieldLabel>Password *</FieldLabel><TextInput type="password" value={form.password} onChange={v => setF("password", v)} placeholder="Min 4 karakter…" /></div>
+        <div><FieldLabel>Password *</FieldLabel><TextInput type="password" value={form.password} onChange={v => setF("password", v)} placeholder="Min 8 char huruf & angka…" /></div>
         <div><FieldLabel>Konfirmasi *</FieldLabel><TextInput type="password" value={form.password2} onChange={v => setF("password2", v)} placeholder="Ulangi password…" /></div>
       </div>
       <div style={{ background: T.blueL, border: "1px solid rgba(47,129,247,.2)", borderRadius: T.r, padding: "10px 14px", fontSize: 12, color: T.blue, marginTop: 8 }}>
@@ -644,15 +662,15 @@ export const ChangePwOrganism = ({ open, onClose, targetUser, onSave, showToast 
   const [conf, setConf] = useState("");
   useEffect(() => { if (open) { setPw(""); setConf(""); } }, [open]);
   const handle = () => {
-    if (!pw || pw.length < 4) { showToast("Password minimal 4 karakter!", "err"); return; }
-    if (pw !== conf)           { showToast("Konfirmasi tidak cocok!", "err");        return; }
+    if (!pw || pw.length < 8 || !/[a-zA-Z]/.test(pw) || !/[0-9]/.test(pw)) { showToast("Password min 8 char dgn huruf & angka!", "err"); return; }
+    if (pw !== conf) { showToast("Konfirmasi tidak cocok!", "err"); return; }
     onSave(pw);
   };
   return (
     <ModalShell open={open} onClose={onClose} title="🔑 Ganti Password" maxWidth={480}
       footer={<><Btn variant="ghost" onClick={onClose}>Batal</Btn><Btn variant="primary" onClick={handle}>🔑 Simpan Password</Btn></>}>
       <div style={{ fontSize: 13, color: T.muted, marginBottom: 16 }}>Mengganti password untuk: <strong style={{ color: T.text }}>{targetUser?.name}</strong></div>
-      <div style={{ marginBottom: 12 }}><FieldLabel>Password Baru *</FieldLabel><TextInput type="password" value={pw} onChange={setPw} placeholder="Min 4 karakter…" /></div>
+      <div style={{ marginBottom: 12 }}><FieldLabel>Password Baru *</FieldLabel><TextInput type="password" value={pw} onChange={setPw} placeholder="Min 8 char huruf & angka…" /></div>
       <div><FieldLabel>Konfirmasi *</FieldLabel><TextInput type="password" value={conf} onChange={setConf} placeholder="Ulangi password baru…" /></div>
     </ModalShell>
   );

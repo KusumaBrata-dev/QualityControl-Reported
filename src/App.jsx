@@ -4,19 +4,19 @@ import Home from "./pages/Home";
 import NotFound from "./pages/NotFound";
 import TestingPages from "./pages/TestingPages";
 
-function App() {
-  const router = createBrowserRouter([
-    {
-      path: "/",
-      element: <TestingPages />,
-      errorElement: <NotFound />,
-    },
-    {
-      path: "/testing",
-      element: <TestingPages />,
-    },
-  ]);
+const router = createBrowserRouter([
+  {
+    path: "/",
+    element: <Home />,
+    errorElement: <NotFound />,
+  },
+  {
+    path: "/testing",
+    element: <TestingPages />,
+  },
+]);
 
+function App() {
   return (
     <Suspense fallback={<div>Loading ...</div>}>
       <RouterProvider router={router} />

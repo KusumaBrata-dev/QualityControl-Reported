@@ -60,6 +60,8 @@ export const DEFECT_CATS = [
 export const mkCp = (result = "pass") =>
   CHECKPOINTS.map(c => ({ name: c, result, value: "" }));
 
+// SEC 3 Mitigation: Client-side authentication is fundamentally insecure.
+// In a real production system, consider implementing a proper backend auth (e.g., JWT).
 export const SEED_USERS = [
   { id:1, name:"Admin QC",       username:"admin",    role:"admin",    password:"admin123", active:true,  created_at:"2025-01-01T00:00:00Z" },
   { id:2, name:"Ahmad Operator", username:"ahmad",    role:"operator", password:"operator", active:true,  created_at:"2025-01-02T00:00:00Z" },
@@ -77,5 +79,5 @@ export const SEED_REPORTS = [
   { id:8, product_id:4, model:"WM891SK",  color:"Pink",   batch_no:"B-WM891P-002",  production_date:"2025-03-02", inspection_date:"2025-03-02T10:00", inspector:"Budi Santoso",   inspector_id:"EMP-003", shift:"B", qty_produced:300, qty_inspected:300, qty_pass:285, qty_fail:15, qty_rework:8,  defect_rate:5.00,  defect_cat:"Color Inconsistency", defect_loc:"Front panel",   station:"Repair",   overall_status:"fail", notes:"Pink dye variation",                      serial_numbers:["SN-PK-40101"],               images:[], checkpoints:mkCp(),       created_at:"2025-03-02T10:00:00Z" },
 ];
 
-export const genNo = id => "QC-" + new Date().getFullYear() + "-" + String(id).padStart(4, "0");
+export const genNo = (id, date) => "QC-" + new Date(date || Date.now()).getFullYear() + "-" + String(id).padStart(4, "0");
 export const drColor = r => r > 5 ? T.red : r > 2 ? T.yellow : T.green;

@@ -2,15 +2,19 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { T, SEED_REPORTS, SEED_USERS } from "./qcConstants";
 import { LoginOrganism, NavbarOrganism, ReportFormOrganism, DetailModal, UserFormOrganism, ChangePwOrganism } from "./components/Organisms";
 import { DashboardTemplate, ReportsTemplate, MatrixTemplate, UsersTemplate } from "./components/Templates";
-import { ToastNotif } from "./components/Molecules";
+import { ToastNotif, ErrorBoundary, ConfirmModal } from "./components/Molecules";
 
 // ════════════════════════════════════════════════════════════════
 // 📄 PAGE — App root, manages all state
 // ════════════════════════════════════════════════════════════════
 export default function QCReportSystemMain() {
   // Core state
-  const [reports,     setReports]     = useState(SEED_REPORTS);
-  const [users,       setUsers]       = useState(SEED_USERS);
+  const [reports,     setReports]     = useState(() => {
+    try { const saved = localStorage.getItem("qc_reports"); return saved ? JSON.parse(saved) : SEED_REPORTS; } catch { return SEED_REPORTS; }
+  });
+  const [users,       setUsers]       = useState(() => {
+    try { const saved = localStorage.getItem("qc_users"); return saved ? JSON.parse(saved) : SEED_USERS; } catch { return SEED_USERS; }
+  });
   
   // Initialize user from localStorage if exists
   const [currentUser, setCurrentUser] = useState(() => {
@@ -33,8 +37,13 @@ export default function QCReportSystemMain() {
   const [editUser,     setEditUser]     = useState(null);
   const [pwOpen,       setPwOpen]       = useState(false);
   const [pwTarget,     setPwTarget]     = useState(null);
+  const [confirmAct,   setConfirmAct]   = useState(null);
+  
   const [nextId,       setNextId]       = useState(SEED_REPORTS.length + 1);
   const [nextUid,      setNextUid]      = useState(SEED_USERS.length  + 1);
+
+  useEffect(() => { localStorage.setItem("qc_reports", JSON.stringify(reports)); }, [reports]);
+  useEffect(() => { localStorage.setItem("qc_users", JSON.stringify(users)); }, [users]);
 
   // Inject global CSS once
   useEffect(() => {
@@ -98,14 +107,17 @@ export default function QCReportSystemMain() {
   // ── Auth ──────────────────────────────────────────
   const handleLogin  = user => { 
     setCurrentUser(user); 
-    localStorage.setItem("qc_auth_user", JSON.stringify(user));
+    const { password, ...safeUser } = user;
+    localStorage.setItem("qc_auth_user", JSON.stringify(safeUser));
     showToast(`👋 Selamat datang, ${user.name}!`); 
   };
   const handleLogout = ()   => { 
-    if (!window.confirm("Yakin ingin logout?")) return; 
-    setCurrentUser(null); 
-    localStorage.removeItem("qc_auth_user");
-    setTab("dashboard"); 
+    setConfirmAct({ title: "Logout", message: "Yakin ingin logout?", onConfirm: () => {
+      setCurrentUser(null); 
+      localStorage.removeItem("qc_auth_user");
+      setTab("dashboard"); 
+      setConfirmAct(null);
+    }});
   };
 
   // ── Navigation ────────────────────────────────────
@@ -119,9 +131,11 @@ export default function QCReportSystemMain() {
   const handleEditReport   = id  => { setEditReport(reports.find(r => r.id === id) || null); setFormOpen(true); };
   const handleDetail       = id  => { setDetailReport(reports.find(r => r.id === id) || null); setDetailOpen(true); };
   const handleDeleteReport = id  => {
-    if (!window.confirm("Hapus laporan ini?")) return;
-    setReports(rs => rs.filter(r => r.id !== id));
-    showToast("🗑 Laporan dihapus");
+    setConfirmAct({ title: "Hapus Laporan", message: "Hapus laporan ini?", onConfirm: () => {
+      setReports(rs => rs.filter(r => r.id !== id));
+      showToast("🗑 Laporan dihapus");
+      setConfirmAct(null);
+    }});
   };
   const handleSaveReport = data => {
     if (data.id) {
@@ -141,9 +155,11 @@ export default function QCReportSystemMain() {
   const handleDeleteUser = id       => {
     if (currentUser?.id === id) { showToast("Tidak bisa hapus akun sendiri!", "err"); return; }
     const u = users.find(x => x.id === id);
-    if (!window.confirm(`Hapus user "${u?.name || id}"?`)) return;
-    setUsers(us => us.filter(u => u.id !== id));
-    showToast("🗑 User dihapus");
+    setConfirmAct({ title: "Hapus User", message: `Hapus user "${u?.name || id}"?`, onConfirm: () => {
+      setUsers(us => us.filter(u => u.id !== id));
+      showToast("🗑 User dihapus");
+      setConfirmAct(null);
+    }});
   };
   const handleSaveUser = data => {
     if (data.id) {
@@ -180,22 +196,24 @@ export default function QCReportSystemMain() {
       />
 
       <div className="qc-p-24" style={{ maxWidth: 1500, margin: "0 auto", padding: 24 }}>
-        {tab === "dashboard" && (
-          <DashboardTemplate reports={reports} canEdit={canEdit}
+        <ErrorBoundary>
+          {tab === "dashboard" && (
+            <DashboardTemplate reports={reports} canEdit={canEdit}
             onDetail={handleDetail} onEdit={handleEditReport} onDelete={handleDeleteReport}
             onNewReport={handleNewReport} />
-        )}
-        {tab === "reports" && (
-          <ReportsTemplate reports={reports} canEdit={canEdit}
-            onDetail={handleDetail} onEdit={handleEditReport} onDelete={handleDeleteReport}
-            onNewReport={handleNewReport} />
-        )}
-        {tab === "matrix" && <MatrixTemplate reports={reports} />}
-        {tab === "users" && isAdmin && (
-          <UsersTemplate users={users} currentUser={currentUser}
-            onAddUser={handleAddUser} onEdit={handleEditUser}
-            onDelete={handleDeleteUser} onChangePw={handleChangePw} />
-        )}
+          )}
+          {tab === "reports" && (
+            <ReportsTemplate reports={reports} canEdit={canEdit}
+              onDetail={handleDetail} onEdit={handleEditReport} onDelete={handleDeleteReport}
+              onNewReport={handleNewReport} />
+          )}
+          {tab === "matrix" && <MatrixTemplate reports={reports} />}
+          {tab === "users" && isAdmin && (
+            <UsersTemplate users={users} currentUser={currentUser}
+              onAddUser={handleAddUser} onEdit={handleEditUser}
+              onDelete={handleDeleteUser} onChangePw={handleChangePw} />
+          )}
+        </ErrorBoundary>
       </div>
 
       {/* ── Modals ── */}
@@ -214,6 +232,10 @@ export default function QCReportSystemMain() {
       <ChangePwOrganism
         open={pwOpen} onClose={() => setPwOpen(false)}
         targetUser={pwTarget} onSave={handleSavePw} showToast={showToast}
+      />
+      <ConfirmModal 
+        open={!!confirmAct} title={confirmAct?.title} message={confirmAct?.message} 
+        onConfirm={confirmAct?.onConfirm} onCancel={() => setConfirmAct(null)} 
       />
 
       {/* ── Toast ── */}
