@@ -57,7 +57,7 @@ export const LoginOrganism = ({ users, onLogin }) => {
         <button onClick={handle} disabled={loading} style={{ width: "100%", background: `linear-gradient(135deg,${T.blueD},${T.blue})`, color: "#fff", border: "none", borderRadius: T.r, padding: 12, fontSize: 15, fontWeight: 700, fontFamily: T.font, cursor: loading ? "not-allowed" : "pointer", boxShadow: "0 4px 16px rgba(47,129,247,.3)", opacity: loading ? 0.8 : 1, marginTop: 16 }}>
           {loading ? "⏳ Memverifikasi…" : "🔐 Masuk"}
         </button>
-        <div style={{ textAlign: "center", marginTop: 20, fontSize: 11, color: T.muted2 }}>QC Report System v3.0 · React Edition</div>
+        <div style={{ textAlign: "center", marginTop: 20, fontSize: 11, color: T.muted2 }}>QC Report System v3.0</div>
       </div>
     </div>
   );
@@ -372,6 +372,52 @@ export const UserGrid = ({ users, currentUser, onEdit, onDelete, onChangePw }) =
   );
 };
 
+/** DefectPicker — sophisticated modal for selecting defect categories */
+export const DefectPicker = ({ open, onClose, onSelect, value }) => {
+  const [search, setSearch] = useState("");
+  const filtered = DEFECT_CATS.filter(d => 
+    d.l.toLowerCase().includes(search.toLowerCase()) || 
+    d.v.toLowerCase().includes(search.toLowerCase())
+  );
+
+  useEffect(() => { if (open) setSearch(""); }, [open]);
+
+  return (
+    <ModalShell open={open} onClose={onClose} title="🔎 Pilih Kategori Defect" maxWidth={600}
+      subtitle="Cari atau pilih salah satu jenis kerusakan di bawah ini">
+      
+      <div style={{ marginBottom: 20 }}>
+        <TextInput value={search} onChange={setSearch} placeholder="Cari nama atau kode defect (contoh: DC01)..." 
+          style={{ padding: "12px 16px", fontSize: 15, borderRadius: 12, border: `1px solid ${T.blue}` }} />
+      </div>
+
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, maxHeight: 400, overflowY: "auto", paddingRight: 4 }}>
+        {filtered.map(d => {
+          const isSelected = d.v === value;
+          return (
+            <div key={d.v} onClick={() => { onSelect(d.v); onClose(); }} 
+              style={{ 
+                padding: "14px 16px", borderRadius: T.r2, cursor: "pointer", 
+                background: isSelected ? T.blueL : T.surface2,
+                border: `1px solid ${isSelected ? T.blue : T.border}`,
+                transition: "all .2s ease",
+                display: "flex", flexDirection: "column", gap: 4
+              }}>
+              <div style={{ fontSize: 11, fontWeight: 700, color: isSelected ? T.blue : T.muted, letterSpacing: 1 }}>{d.v.slice(0, 4)}</div>
+              <div style={{ fontSize: 13, fontWeight: 700, color: isSelected ? "#fff" : T.text }}>{d.l.split(" – ")[1] || d.l}</div>
+            </div>
+          );
+        })}
+        {filtered.length === 0 && (
+          <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: 40, color: T.muted }}>
+            Tidak ada kategori defect yang cocok.
+          </div>
+        )}
+      </div>
+    </ModalShell>
+  );
+};
+
 /** ReportFormOrganism — create / edit report modal */
 export const ReportFormOrganism = ({ open, onClose, editReport, onSave, showToast }) => {
   const empty = () => {
@@ -389,6 +435,7 @@ export const ReportFormOrganism = ({ open, onClose, editReport, onSave, showToas
   const [snList,  setSnList]  = useState([]);
   const [snInput, setSnInput] = useState("");
   const [cpState, setCpState] = useState(mkCp());
+  const [pickerOpen, setPickerOpen] = useState(false);
 
   useEffect(() => {
     if (!open) return;
@@ -410,6 +457,7 @@ export const ReportFormOrganism = ({ open, onClose, editReport, onSave, showToas
       setCpState(mkCp());
     }
     setSnInput("");
+    setPickerOpen(false);
   }, [open, editReport]);
 
   const setF      = (k, v)        => setForm(f => ({ ...f, [k]: v }));
@@ -448,11 +496,15 @@ export const ReportFormOrganism = ({ open, onClose, editReport, onSave, showToas
     <ModalShell open={open} onClose={onClose} title={editReport ? "✏️ Edit Laporan QC" : "+ Laporan QC Baru"} maxWidth={840}
       footer={<><Btn variant="ghost" onClick={onClose}>Batal</Btn><Btn variant="success" onClick={handleSave}>💾 Simpan Laporan</Btn></>}>
 
-      <SectionHeader icon="🔢" first>Data Kuantitas</SectionHeader>
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 14, marginBottom: 20 }}>
-        {[["Barang Masuk","qty_burning_in"],["Diproduksi","qty_produced"],["Pass","qty_pass"],["Fail / Reject","qty_fail"],["Rework","qty_rework"]].map(([lbl, key]) => (
-          <div key={key}><FieldLabel>{lbl}</FieldLabel><TextInput type="number" value={form[key]} onChange={v => setF(key, v)} placeholder="0" style={{ fontFamily: T.mono }} /></div>
-        ))}
+      <SectionHeader icon="📟" first>Serial Number Unit Reject</SectionHeader>
+      <div style={{ background: "rgba(47,129,247,.06)", border: "1px dashed rgba(47,129,247,.3)", borderRadius: T.r2, padding: 14 }}>
+        <div style={{ fontSize: 10.5, fontWeight: 700, color: T.blue, textTransform: "uppercase", letterSpacing: "1.2px", marginBottom: 8 }}>Scan atau ketik SN unit REJECT</div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <TextInput value={snInput} onChange={setSnInput} placeholder="Scan barcode / ketik SN lalu Enter…" style={{ flex: 1 }} />
+          <Btn variant="primary" size="sm" onClick={addSN}>+ Tambah</Btn>
+        </div>
+        {snList.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>{snList.map(sn => <SNChip key={sn} sn={sn} onRemove={() => setSnList(s => s.filter(x => x !== sn))} />)}</div>}
+        <div style={{ fontSize: 11, color: T.muted, marginTop: 6 }}>Total: <span style={{ fontWeight: 700, color: T.red }}>{snList.length}</span> SN</div>
       </div>
 
       <SectionHeader icon="📦">Informasi Produk</SectionHeader>
@@ -469,24 +521,19 @@ export const ReportFormOrganism = ({ open, onClose, editReport, onSave, showToas
         <div><FieldLabel>Tanggal & Waktu Inspeksi *</FieldLabel><TextInput type="datetime-local" value={form.inspection_date} onChange={v => setF("inspection_date", v)} /></div>
       </div>
 
-      <SectionHeader icon="📟">Serial Number Unit Reject</SectionHeader>
-      <div style={{ background: "rgba(47,129,247,.06)", border: "1px dashed rgba(47,129,247,.3)", borderRadius: T.r2, padding: 14 }}>
-        <div style={{ fontSize: 10.5, fontWeight: 700, color: T.blue, textTransform: "uppercase", letterSpacing: "1.2px", marginBottom: 8 }}>Scan atau ketik SN unit REJECT</div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <TextInput value={snInput} onChange={setSnInput} placeholder="Scan barcode / ketik SN lalu Enter…" style={{ flex: 1 }} />
-          <Btn variant="primary" size="sm" onClick={addSN}>+ Tambah</Btn>
-        </div>
-        {snList.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>{snList.map(sn => <SNChip key={sn} sn={sn} onRemove={() => setSnList(s => s.filter(x => x !== sn))} />)}</div>}
-        <div style={{ fontSize: 11, color: T.muted, marginTop: 6 }}>Total: <span style={{ fontWeight: 700, color: T.red }}>{snList.length}</span> SN</div>
-      </div>
-
       <SectionHeader icon="🔎">Jenis Defect</SectionHeader>
       <div className="qc-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-        <div><FieldLabel>Kategori Defect</FieldLabel>
-          <SelectInput value={form.defect_cat} onChange={v => setF("defect_cat", v)}>
-            <option value="">— Pilih Kategori —</option>
-            {DEFECT_CATS.map(d => <option key={d.v} value={d.v}>{d.l}</option>)}
-          </SelectInput>
+        <div>
+          <FieldLabel>Kategori Defect</FieldLabel>
+          <div onClick={() => setPickerOpen(true)} style={{ 
+            background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.r, padding: "9px 12px", 
+            fontSize: 13.5, color: form.defect_cat ? T.text : T.muted, cursor: "pointer",
+            display: "flex", justifyContent: "space-between", alignItems: "center"
+          }}>
+            {DEFECT_CATS.find(d => d.v === form.defect_cat)?.l || "— Pilih Kategori —"}
+            <span style={{ fontSize: 10 }}>▼</span>
+          </div>
+          <DefectPicker open={pickerOpen} onClose={() => setPickerOpen(false)} value={form.defect_cat} onSelect={v => setF("defect_cat", v)} />
         </div>
         <div><FieldLabel>Lokasi Defect</FieldLabel><TextInput value={form.defect_loc} onChange={v => setF("defect_loc", v)} placeholder="Top panel, Door frame…" /></div>
         <div><FieldLabel>Stasiun *</FieldLabel>

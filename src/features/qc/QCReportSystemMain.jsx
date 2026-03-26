@@ -3,18 +3,19 @@ import { T, SEED_REPORTS, SEED_USERS } from "./qcConstants";
 import { LoginOrganism, NavbarOrganism, ReportFormOrganism, DetailModal, UserFormOrganism, ChangePwOrganism } from "./components/Organisms";
 import { DashboardTemplate, ReportsTemplate, MatrixTemplate, UsersTemplate } from "./components/Templates";
 import { ToastNotif, ErrorBoundary, ConfirmModal } from "./components/Molecules";
+import { db } from "../../firebase";
+import { collection, onSnapshot, doc, setDoc, deleteDoc } from "firebase/firestore";
+
 
 // ════════════════════════════════════════════════════════════════
 // 📄 PAGE — App root, manages all state
 // ════════════════════════════════════════════════════════════════
 export default function QCReportSystemMain() {
   // Core state
-  const [reports,     setReports]     = useState(() => {
-    try { const saved = localStorage.getItem("qc_reports"); return saved ? JSON.parse(saved) : SEED_REPORTS; } catch { return SEED_REPORTS; }
-  });
-  const [users,       setUsers]       = useState(() => {
-    try { const saved = localStorage.getItem("qc_users"); return saved ? JSON.parse(saved) : SEED_USERS; } catch { return SEED_USERS; }
-  });
+  const [reports, setReports] = useState([]);
+  const [users,   setUsers]   = useState([]);
+  const [dailyProd, setDailyProd] = useState({});
+  const [loading, setLoading] = useState(true);
   
   // Initialize user from localStorage if exists
   const [currentUser, setCurrentUser] = useState(() => {
@@ -42,9 +43,28 @@ export default function QCReportSystemMain() {
   const [nextId,       setNextId]       = useState(SEED_REPORTS.length + 1);
   const [nextUid,      setNextUid]      = useState(SEED_USERS.length  + 1);
 
-  useEffect(() => { localStorage.setItem("qc_reports", JSON.stringify(reports)); }, [reports]);
-  useEffect(() => { localStorage.setItem("qc_users", JSON.stringify(users)); }, [users]);
+  useEffect(() => {
+    const unsubReports = onSnapshot(collection(db, "reports"), snap => {
+      setReports(snap.docs.map(d => ({ ...d.data(), id: Number(d.id) })));
+      setLoading(false);
+    });
 
+    const unsubUsers = onSnapshot(collection(db, "users"), snap => {
+      setUsers(snap.docs.map(d => ({ ...d.data(), id: Number(d.id) })));
+    });
+
+    const unsubDaily = onSnapshot(collection(db, "daily_production"), snap => {
+      const data = {};
+      snap.docs.forEach(d => { data[d.id] = d.data().qty; });
+      setDailyProd(data);
+    });
+
+    return () => {
+      unsubReports();
+      unsubUsers();
+      unsubDaily();
+    };
+  }, []);
   // Inject global CSS once
   useEffect(() => {
     const styleId = "qc-reports-global-styles";
@@ -126,61 +146,86 @@ export default function QCReportSystemMain() {
     setTab(t);
   };
 
+  const handleSaveDailyProd = async (dateStr, qty) => {
+    if (!canEdit) { showToast("Akses ditolak", "err"); return; }
+    const numQty = Number(qty);
+    if (!numQty) return;
+    try {
+      const currentQty = dailyProd[dateStr] || 0;
+      await setDoc(doc(db, "daily_production", dateStr), { qty: currentQty + numQty }, { merge: true });
+      showToast(`✅ ${numQty} Unit ditambahkan!`);
+    } catch { showToast("Gagal menyimpan Barang Masuk!", "err"); }
+  };
+
   // ── Reports CRUD ──────────────────────────────────
   const handleNewReport    = ()  => { setEditReport(null); setFormOpen(true); };
   const handleEditReport   = id  => { setEditReport(reports.find(r => r.id === id) || null); setFormOpen(true); };
   const handleDetail       = id  => { setDetailReport(reports.find(r => r.id === id) || null); setDetailOpen(true); };
   const handleDeleteReport = id  => {
-    setConfirmAct({ title: "Hapus Laporan", message: "Hapus laporan ini?", onConfirm: () => {
-      setReports(rs => rs.filter(r => r.id !== id));
-      showToast("🗑 Laporan dihapus");
+    setConfirmAct({ title: "Hapus Laporan", message: "Hapus laporan ini?", onConfirm: async () => {
+      try {
+        await deleteDoc(doc(db, "reports", String(id)));
+        showToast("🗑 Laporan dihapus");
+      } catch { showToast("Gagal menghapus laporan!", "err"); }
       setConfirmAct(null);
     }});
   };
-  const handleSaveReport = data => {
-    if (data.id) {
-      setReports(rs => rs.map(r => r.id === data.id ? data : r));
-      showToast("✅ Laporan diupdate!");
-    } else {
-      setReports(rs => [...rs, { ...data, id: nextId }]);
-      setNextId(n => n + 1);
-      showToast("✅ Laporan tersimpan!");
-    }
+  const handleSaveReport = async data => {
+    const isEdit = !!data.id;
+    const id = isEdit ? data.id : nextId;
+    try {
+      await setDoc(doc(db, "reports", String(id)), { ...data, id }, { merge: true });
+      if (!isEdit) setNextId(n => n + 1);
+      showToast(isEdit ? "✅ Laporan diupdate!" : "✅ Laporan tersimpan!");
+    } catch { showToast("Gagal menyimpan laporan!", "err"); }
     setFormOpen(false);
   };
 
-  // ── Users CRUD ────────────────────────────────────
-  const handleAddUser    = ()       => { setEditUser(null); setUserFormOpen(true); };
-  const handleEditUser   = id       => { setEditUser(users.find(u => u.id === id) || null); setUserFormOpen(true); };
-  const handleDeleteUser = id       => {
+  // ── Users CRUD ──────────────────────────────────
+  const handleAddUser    = ()  => { setEditUser(null); setUserFormOpen(true); };
+  const handleEditUser   = id  => { setEditUser(users.find(u => u.id === id) || null); setUserFormOpen(true); };
+  const handleDeleteUser = id  => {
     if (currentUser?.id === id) { showToast("Tidak bisa hapus akun sendiri!", "err"); return; }
     const u = users.find(x => x.id === id);
-    setConfirmAct({ title: "Hapus User", message: `Hapus user "${u?.name || id}"?`, onConfirm: () => {
-      setUsers(us => us.filter(u => u.id !== id));
-      showToast("🗑 User dihapus");
+    setConfirmAct({ title: "Hapus User", message: `Hapus user "${u?.name || id}"?`, onConfirm: async () => {
+      try {
+        await deleteDoc(doc(db, "users", String(id)));
+        showToast("🗑 User dihapus");
+      } catch { showToast("Gagal menghapus user!", "err"); }
       setConfirmAct(null);
     }});
   };
-  const handleSaveUser = data => {
-    if (data.id) {
-      setUsers(us => us.map(u => u.id === data.id ? data : u));
-      if (currentUser?.id === data.id) setCurrentUser(data);
-      showToast("✅ User diupdate!");
-    } else {
-      setUsers(us => [...us, { ...data, id: nextUid }]);
-      setNextUid(n => n + 1);
-      showToast("✅ User ditambahkan!");
-    }
+  const handleSaveUser = async data => {
+    const isEdit = !!data.id;
+    const id = isEdit ? data.id : nextUid;
+    try {
+      await setDoc(doc(db, "users", String(id)), { ...data, id }, { merge: true });
+      if (!isEdit) setNextUid(n => n + 1);
+      if (currentUser?.id === id) {
+        const { password, ...safe } = { ...data, id };
+        setCurrentUser(safe);
+        localStorage.setItem("qc_auth_user", JSON.stringify(safe));
+      }
+      showToast(isEdit ? "✅ User diupdate!" : "✅ User ditambahkan!");
+    } catch { showToast("Gagal menyimpan user!", "err"); }
     setUserFormOpen(false);
   };
   const handleChangePw = (id, _name) => { setPwTarget(users.find(u => u.id === id) || null); setPwOpen(true); };
-  const handleSavePw   = pw          => {
-    setUsers(us => us.map(u => u.id === pwTarget.id ? { ...u, password: pw } : u));
-    setPwOpen(false);
-    showToast("✅ Password berhasil diubah!");
+  const handleSavePw   = async pw => {
+    try {
+      await setDoc(doc(db, "users", String(pwTarget.id)), { password: pw }, { merge: true });
+      setPwOpen(false);
+      showToast("✅ Password berhasil diubah!");
+    } catch { showToast("Gagal mengubah password!", "err"); }
   };
 
   // ── Render ────────────────────────────────────────
+  if (loading) return (
+    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: T.bg, color: T.muted, fontSize: 14 }}>
+      ⏳ Memuat data...
+    </div>
+  );
+
   if (!currentUser) return (
     <div className="qc-root">
       <LoginOrganism users={users} onLogin={handleLogin} />
@@ -198,7 +243,7 @@ export default function QCReportSystemMain() {
       <div className="qc-p-24" style={{ maxWidth: 1500, margin: "0 auto", padding: 24 }}>
         <ErrorBoundary>
           {tab === "dashboard" && (
-            <DashboardTemplate reports={reports} canEdit={canEdit}
+            <DashboardTemplate reports={reports} canEdit={canEdit} dailyProd={dailyProd} onSaveDailyProd={handleSaveDailyProd}
             onDetail={handleDetail} onEdit={handleEditReport} onDelete={handleDeleteReport}
             onNewReport={handleNewReport} />
           )}

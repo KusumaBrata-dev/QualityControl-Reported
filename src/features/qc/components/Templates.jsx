@@ -1,32 +1,35 @@
 import React, { useState } from "react";
 import { T, genNo } from "../qcConstants";
-import { Btn, TextInput, SelectInput, Card, CardHeader } from "./Atoms";
+import { Btn, TextInput, SelectInput, Card, CardHeader, DatePicker } from "./Atoms";
 import { FilterField } from "./Molecules";
 import { DashboardKPIs, DashboardCharts, ReportTable, MatrixOrganism, UserGrid } from "./Organisms";
 
 /** DashboardTemplate */
-export const DashboardTemplate = ({ reports, canEdit, onDetail, onEdit, onDelete, onNewReport }) => {
+export const DashboardTemplate = ({ reports, canEdit, dailyProd, onSaveDailyProd, onDetail, onEdit, onDelete, onNewReport }) => {
   const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
-  const [selectedDate, setSelectedDate] = React.useState(() => reports.length ? reports[reports.length - 1]?.inspection_date?.slice(0, 10) : todayStr);
+  const [selectedDate, setSelectedDate] = React.useState(todayStr);
   const [burningInQty, setBurningInQty] = React.useState("");
 
+  const serverQty = dailyProd[selectedDate] || 0;
   const todayReports = selectedDate ? reports.filter(r => (r.inspection_date || "").startsWith(selectedDate)) : reports;
+  const activeDates = Array.from(new Set([...reports.map(r => r.inspection_date?.slice(0,10)), ...Object.keys(dailyProd).filter(k => dailyProd[k] > 0)])).filter(Boolean).sort().reverse();
 
   return (
     <div>
-      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", marginBottom: 16, background: T.surface, padding: "12px 16px", borderRadius: T.r2, border: `1px solid ${T.border}` }}>
+      <div style={{ display: "flex", flexWrap: "wrap", justifyContent: "space-between", alignItems: "center", marginBottom: 16, background: T.surface, padding: "12px 16px", borderRadius: T.r2, border: `1px solid ${T.border}`, gap: 12 }}>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 13, color: T.muted }}>Filter Hari:</span>
-          <input type="date" value={selectedDate || ""} onChange={e => setSelectedDate(e.target.value)} style={{ background: T.surface2, border: `1px solid ${T.border}`, borderRadius: T.r, color: T.text, fontSize: 13, padding: "6px 10px", outline: "none", cursor: "pointer" }} />
-        </div>
+            <span style={{ fontSize: 13, color: T.muted }}>Filter Hari:</span>
+            <DatePicker value={selectedDate} onChange={setSelectedDate} activeDates={activeDates} />
+          </div>
         <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
           <span style={{ fontSize: 13, color: T.muted }}>Barang Masuk:</span>
-          <TextInput type="number" value={burningInQty} onChange={setBurningInQty} placeholder="Ketik kuantitas..." style={{ width: 140 }} />
+          <TextInput type="number" value={burningInQty} onChange={setBurningInQty} placeholder="+ Tambah Qty..." style={{ width: 125 }} />
+          {canEdit && <Btn variant="primary" size="sm" onClick={() => { onSaveDailyProd(selectedDate, burningInQty); setBurningInQty(""); }}>Simpan</Btn>}
         </div>
       </div>
 
-      <DashboardKPIs reports={todayReports} burningInQty={Number(burningInQty) || 0} />
-      <DashboardCharts reports={reports} selectedDate={selectedDate} burningInQty={Number(burningInQty) || 0} />
+      <DashboardKPIs reports={todayReports} burningInQty={serverQty} />
+      <DashboardCharts reports={reports} selectedDate={selectedDate} burningInQty={serverQty} />
       <Card>
         <CardHeader
           title={`Laporan QC Terbaru — ${selectedDate || "Semua Tanggal"}`}
@@ -49,11 +52,12 @@ export const DashboardTemplate = ({ reports, canEdit, onDetail, onEdit, onDelete
 
 /** ReportsTemplate — with filter bar */
 export const ReportsTemplate = ({ reports, canEdit, onDetail, onEdit, onDelete, onNewReport }) => {
+  const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   const [search, setSearch] = useState("");
   const [model,  setModel]  = useState("");
   const [color,  setColor]  = useState("");
   const [status, setStatus] = useState("");
-  const [date,   setDate]   = useState("");
+  const [date,   setDate]   = useState(todayStr);
 
   const colorOpts = model === "WM1091SK" ? ["Blue","Purple"] : model === "WM891SK" ? ["Aqua","Pink"] : ["Blue","Purple","Aqua","Pink"];
 
@@ -69,7 +73,7 @@ export const ReportsTemplate = ({ reports, canEdit, onDetail, onEdit, onDelete, 
     return true;
   });
 
-  const reset = () => { setSearch(""); setModel(""); setColor(""); setStatus(""); setDate(""); };
+  const reset = () => { setSearch(""); setModel(""); setColor(""); setStatus(""); setDate(todayStr); };
 
   return (
     <div>
@@ -111,7 +115,25 @@ export const ReportsTemplate = ({ reports, canEdit, onDetail, onEdit, onDelete, 
 };
 
 /** MatrixTemplate */
-export const MatrixTemplate = ({ reports }) => <MatrixOrganism reports={reports} />;
+export const MatrixTemplate = ({ reports }) => {
+  const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  const [selectedDate, setSelectedDate] = React.useState(todayStr);
+
+  const filtered = selectedDate ? reports.filter(r => (r.inspection_date || "").startsWith(selectedDate)) : reports;
+
+  return (
+    <div>
+      <div style={{ display: "flex", justifyContent: "flex-end", marginBottom: 16 }}>
+        <div style={{ display: "flex", alignItems: "center", gap: 12, background: T.surface, padding: "8px 16px", borderRadius: T.r2, border: `1px solid ${T.border}` }}>
+          <span style={{ fontSize: 13, color: T.muted }}>Filter Hari:</span>
+          <input type="date" value={selectedDate || ""} onChange={e => setSelectedDate(e.target.value)} style={{ background: T.surface2, border: `1px solid ${T.border}`, borderRadius: T.r, color: T.text, fontSize: 13, padding: "6px 10px", outline: "none", cursor: "pointer" }} />
+          <Btn variant="ghost" size="sm" onClick={() => setSelectedDate("")}>Semua Data</Btn>
+        </div>
+      </div>
+      <MatrixOrganism reports={filtered} />
+    </div>
+  );
+};
 
 /** UsersTemplate */
 export const UsersTemplate = ({ users, currentUser, onAddUser, onEdit, onDelete, onChangePw }) => (

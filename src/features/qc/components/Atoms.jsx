@@ -185,3 +185,110 @@ export const CardHeader = ({ title, actions }) => (
     {actions && <div style={{ display: "flex", gap: 8, alignItems: "center" }}>{actions}</div>}
   </div>
 );
+
+/** DatePicker — custom calendar with data-dot indicators */
+export const DatePicker = ({ value, onChange, activeDates = [] }) => {
+  const activeSet = new Set(activeDates);
+  const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  const [open, setOpen] = React.useState(false);
+  const [view, setView] = React.useState(() => {
+    const d = value ? new Date(value) : new Date();
+    return { year: d.getFullYear(), month: d.getMonth() };
+  });
+  const ref = React.useRef(null);
+
+  React.useEffect(() => {
+    const handler = e => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+    document.addEventListener("mousedown", handler);
+    return () => document.removeEventListener("mousedown", handler);
+  }, []);
+
+  const daysInMonth = new Date(view.year, view.month + 1, 0).getDate();
+  const firstDow = new Date(view.year, view.month, 1).getDay();
+  const monthLabel = new Date(view.year, view.month).toLocaleDateString("id-ID", { month: "long", year: "numeric" });
+  const days = ["Min", "Sen", "Sel", "Rab", "Kam", "Jum", "Sab"];
+
+  const prevMonth = () => setView(v => v.month === 0 ? { year: v.year - 1, month: 11 } : { ...v, month: v.month - 1 });
+  const nextMonth = () => setView(v => v.month === 11 ? { year: v.year + 1, month: 0 } : { ...v, month: v.month + 1 });
+
+  const pickDate = (day) => {
+    const ds = `${view.year}-${String(view.month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+    onChange(ds);
+    setOpen(false);
+  };
+
+  const cells = [];
+  for (let i = 0; i < firstDow; i++) cells.push(null);
+  for (let d = 1; d <= daysInMonth; d++) cells.push(d);
+
+  const displayLabel = value ? value.slice(5).replace("-", "/") + "/" + value.slice(0, 4) : "Pilih Tanggal";
+
+  return (
+    <div ref={ref} style={{ position: "relative" }}>
+      <button onClick={() => setOpen(o => !o)} style={{
+        background: T.surface2, border: `1px solid ${open ? T.blue : T.border}`, borderRadius: T.r,
+        color: T.text, fontSize: 13, padding: "6px 12px", cursor: "pointer", fontFamily: T.font,
+        display: "flex", alignItems: "center", gap: 8, minWidth: 140,
+      }}>
+        📅 {displayLabel}
+        <span style={{ marginLeft: "auto", color: T.muted, fontSize: 11 }}>▾</span>
+      </button>
+
+      {open && (
+        <div style={{
+          position: "absolute", top: "calc(100% + 6px)", left: 0, zIndex: 999,
+          background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.r2,
+          boxShadow: "0 8px 32px rgba(0,0,0,.4)", padding: 12, minWidth: 240,
+        }}>
+          {/* Month nav */}
+          <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+            <button onClick={prevMonth} style={{ background: "none", border: "none", color: T.muted, cursor: "pointer", fontSize: 16, padding: "2px 6px" }}>‹</button>
+            <span style={{ fontSize: 12, fontWeight: 700, color: T.text }}>{monthLabel}</span>
+            <button onClick={nextMonth} style={{ background: "none", border: "none", color: T.muted, cursor: "pointer", fontSize: 16, padding: "2px 6px" }}>›</button>
+          </div>
+          {/* Day headers */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2, marginBottom: 4 }}>
+            {days.map(d => (
+              <div key={d} style={{ textAlign: "center", fontSize: 9, fontWeight: 700, color: T.muted2, padding: "2px 0" }}>{d}</div>
+            ))}
+          </div>
+          {/* Date cells */}
+          <div style={{ display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 2 }}>
+            {cells.map((day, i) => {
+              if (!day) return <div key={`e${i}`} />;
+              const ds = `${view.year}-${String(view.month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+              const isSelected = ds === value;
+              const isToday = ds === todayStr;
+              const hasData = activeSet.has(ds);
+              return (
+                <div key={ds} onClick={() => pickDate(day)} style={{
+                  textAlign: "center", padding: "5px 2px", borderRadius: T.r, cursor: "pointer",
+                  background: isSelected ? T.blue : isToday ? T.blueL : "none",
+                  color: isSelected ? "#fff" : isToday ? T.blue : T.text,
+                  fontWeight: isSelected || isToday ? 700 : 400,
+                  fontSize: 12, position: "relative", transition: "background .1s",
+                }}>
+                  {day}
+                  {hasData && (
+                    <div style={{
+                      position: "absolute", bottom: 2, left: "50%", transform: "translateX(-50%)",
+                      width: 5, height: 5, borderRadius: "50%",
+                      background: isSelected ? "#fff" : T.green,
+                    }} />
+                  )}
+                </div>
+              );
+            })}
+          </div>
+          {/* Today button */}
+          <div style={{ textAlign: "right", marginTop: 8, borderTop: `1px solid ${T.border}`, paddingTop: 8 }}>
+            <button onClick={() => { onChange(todayStr); setOpen(false); }} style={{ background: "none", border: "none", color: T.blue, cursor: "pointer", fontSize: 12, fontWeight: 700, fontFamily: T.font }}>
+              Hari Ini
+            </button>
+          </div>
+        </div>
+      )}
+    </div>
+  );
+};
+
