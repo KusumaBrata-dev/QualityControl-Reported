@@ -9,10 +9,12 @@ export default defineConfig({
     rollupOptions: {
       output: {
         manualChunks(id) {
-          if (id.includes('node_modules')) {
-            if (id.includes('react-router')) return 'router';
-            if (id.includes('react')) return 'vendor';
-            if (id.includes('recharts')) return 'charts';
+          if (id.includes("node_modules")) {
+            if (id.includes("react-router")) return "router";
+            if (id.includes("react")) return "vendor";
+            if (id.includes("recharts")) return "charts";
+            if (id.includes("firebase")) return "firebase";
+            if (id.includes("exceljs")) return "exceljs";
           }
         },
       },
