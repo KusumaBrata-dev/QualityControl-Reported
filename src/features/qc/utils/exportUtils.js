@@ -1,13 +1,17 @@
 import ExcelJS from "exceljs";
 import { genNo } from "../qcConstants";
 
-/** 
+/**
  * exportToExcel - Modernized Excel export using exceljs
  * @param {Array} data - The report data array
  * @param {string} filename - Base filename
  * @param {Object} options - Optional filters/metadata
  */
-export async function exportToExcel(data, filename = "QC_Report", options = {}) {
+export async function exportToExcel(
+  data,
+  filename = "QC_Report",
+  options = {},
+) {
   if (!data.length) return;
 
   const wb = new ExcelJS.Workbook();
@@ -18,24 +22,24 @@ export async function exportToExcel(data, filename = "QC_Report", options = {}) 
 
   // Column definitions
   ws.columns = [
-    { key: "rno",   header: "Report No",      width: 18 },
-    { key: "model", header: "Model",          width: 15 },
-    { key: "color", header: "Warna",          width: 12 },
-    { key: "batch", header: "Batch No",        width: 22 },
-    { key: "pdate", header: "Tgl Produksi",    width: 14 },
-    { key: "idate", header: "Tgl Inspeksi",    width: 20 },
-    { key: "prod",  header: "Diproduksi",      width: 12 },
-    { key: "insp",  header: "Diperiksa",       width: 12 },
-    { key: "pass",  header: "Pass",            width: 8 },
-    { key: "fail",  header: "Fail",            width: 8 },
-    { key: "rework",header: "Rework",          width: 8 },
-    { key: "dr",    header: "Defect Rate (%)", width: 15 },
-    { key: "stn",   header: "Stasiun",         width: 12 },
-    { key: "dcat",  header: "Jenis Defect",    width: 22 },
-    { key: "dloc",  header: "Lokasi Defect",   width: 18 },
-    { key: "status",header: "Status",          width: 10 },
-    { key: "sns",   header: "Serial Number",   width: 45 },
-    { key: "notes", header: "Catatan",         width: 35 },
+    { key: "rno", header: "Report No", width: 18 },
+    { key: "model", header: "Model", width: 15 },
+    { key: "color", header: "Warna", width: 12 },
+    { key: "sns", header: "Serial Number", width: 45 },
+    { key: "batch", header: "Batch No", width: 22 },
+    { key: "pdate", header: "Tgl Produksi", width: 14 },
+    { key: "idate", header: "Tgl Inspeksi", width: 20 },
+    { key: "prod", header: "Diproduksi", width: 12 },
+    { key: "insp", header: "Diperiksa", width: 12 },
+    { key: "pass", header: "Pass", width: 8 },
+    { key: "fail", header: "Fail", width: 8 },
+    { key: "rework", header: "Rework", width: 8 },
+    { key: "dr", header: "Defect Rate (%)", width: 15 },
+    { key: "stn", header: "Stasiun", width: 12 },
+    { key: "dcat", header: "Jenis Defect", width: 22 },
+    { key: "dloc", header: "Lokasi Defect", width: 18 },
+    { key: "status", header: "Status", width: 10 },
+    { key: "notes", header: "Catatan", width: 35 },
   ];
 
   // Styling for header
@@ -60,7 +64,7 @@ export async function exportToExcel(data, filename = "QC_Report", options = {}) 
   data.forEach((r) => {
     const isPass = r.overall_status === "pass";
     const dr = Number(r.defect_rate || 0);
-    
+
     const row = ws.addRow({
       rno: genNo(r.id, r.created_at),
       model: r.model,
@@ -91,7 +95,7 @@ export async function exportToExcel(data, filename = "QC_Report", options = {}) 
         cell.fill = {
           type: "pattern",
           pattern: "solid",
-          fgColor: { argb: "FFFDF2F2" }, 
+          fgColor: { argb: "FFFDF2F2" },
         };
       });
     }
@@ -119,9 +123,16 @@ export async function exportToExcel(data, filename = "QC_Report", options = {}) 
   wsSum.getColumn(1).width = 30;
   wsSum.getColumn(2).width = 20;
 
-  const tFail = data.filter(r => r.overall_status === "fail").length;
-  const tUnitInsp = data.reduce((a, r) => a + (Number(r.qty_inspected) || 0), 0);
-  const avgDR = data.length ? (data.reduce((a, r) => a + (Number(r.defect_rate) || 0), 0) / data.length).toFixed(2) : 0;
+  const tFail = data.filter((r) => r.overall_status === "fail").length;
+  const tUnitInsp = data.reduce(
+    (a, r) => a + (Number(r.qty_inspected) || 0),
+    0,
+  );
+  const avgDR = data.length
+    ? (
+        data.reduce((a, r) => a + (Number(r.defect_rate) || 0), 0) / data.length
+      ).toFixed(2)
+    : 0;
 
   const summaryData = [
     ["RINGKASAN QC REPORT", ""],

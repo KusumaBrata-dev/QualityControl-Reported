@@ -644,6 +644,7 @@ export const ReportTable = ({
     "Report No",
     "Model",
     "Warna",
+    "SN",
     "Batch",
     "Tgl Inspeksi",
     "Barang Masuk",
@@ -651,7 +652,6 @@ export const ReportTable = ({
     "Fail",
     "Defect%",
     "Stasiun",
-    "SN",
     "Status",
     "Aksi",
   ];
@@ -731,6 +731,17 @@ export const ReportTable = ({
                   <td style={{ padding: "12px 14px" }}>
                     <ColorTag color={r.color} />
                   </td>
+                  {!mini && (
+                    <td style={{ padding: "12px 14px" }}>
+                      {snCount > 0 ? (
+                        <Badge type="fail" style={{ fontSize: 10 }}>
+                          📟 {snCount}
+                        </Badge>
+                      ) : (
+                        <span style={{ color: T.muted2, fontSize: 11 }}>–</span>
+                      )}
+                    </td>
+                  )}
                   <td style={{ padding: "12px 14px" }}>
                     <span
                       style={{
@@ -796,17 +807,6 @@ export const ReportTable = ({
                   {!mini && (
                     <td style={{ padding: "12px 14px" }}>
                       <StationBadge station={r.station} />
-                    </td>
-                  )}
-                  {!mini && (
-                    <td style={{ padding: "12px 14px" }}>
-                      {snCount > 0 ? (
-                        <Badge type="fail" style={{ fontSize: 10 }}>
-                          📟 {snCount}
-                        </Badge>
-                      ) : (
-                        <span style={{ color: T.muted2, fontSize: 11 }}>–</span>
-                      )}
                     </td>
                   )}
                   <td style={{ padding: "12px 14px" }}>
@@ -1669,192 +1669,223 @@ export const ReportFormOrganism = ({
 
 /** DetailModal — read-only report detail */
 export const DetailModal = ({ open, onClose, report, canEdit, onEdit }) => {
+  const [previewUrl, setPreviewUrl] = useState(null);
+
   if (!report) return null;
   const rate = report.defect_rate || 0;
   return (
-    <ModalShell
-      open={open}
-      onClose={onClose}
-      title={genNo(report.id, report.created_at)}
-      subtitle={`${report.batch_no} · ${(report.inspection_date || "").substring(0, 16)}`}
-      maxWidth={880}
-      headerExtra={<StatusBadge status={report.overall_status} />}
-      footer={
-        <>
-          <Btn variant="ghost" onClick={onClose}>
-            Tutup
-          </Btn>
-          {canEdit && (
-            <Btn
-              variant="yellow_outline"
-              onClick={() => {
-                onClose();
-                onEdit(report.id);
-              }}
-            >
-              ✏️ Edit
+    <>
+      <ModalShell
+        open={open}
+        onClose={onClose}
+        title={genNo(report.id, report.created_at)}
+        subtitle={`${report.batch_no} · ${(report.inspection_date || "").substring(0, 16)}`}
+        maxWidth={880}
+        headerExtra={<StatusBadge status={report.overall_status} />}
+        footer={
+          <>
+            <Btn variant="ghost" onClick={onClose}>
+              Tutup
             </Btn>
-          )}
-        </>
-      }
-    >
-      {/* KPIs & Summary */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 16, marginBottom: 20 }}>
-        <div 
-          style={{ 
-            background: T.surface2, 
-            border: `1px solid ${T.border}`, 
-            borderRadius: T.r2, 
-            padding: 16,
+            {canEdit && (
+              <Btn
+                variant="yellow_outline"
+                onClick={() => {
+                  onClose();
+                  onEdit(report.id);
+                }}
+              >
+                ✏️ Edit
+              </Btn>
+            )}
+          </>
+        }
+      >
+        {/* KPIs & Summary */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 16, marginBottom: 20 }}>
+          <div 
+            style={{ 
+              background: T.surface2, 
+              border: `1px solid ${T.border}`, 
+              borderRadius: T.r2, 
+              padding: 16,
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: 12
+            }}
+          >
+            {[
+              { l: "Batch No", v: report.batch_no, icon: "📦" },
+              { l: "Inspector", v: report.inspector || "Admin", icon: "👤" },
+              { l: "Tgl Inspeksi", v: (report.inspection_date || "").replace("T", " "), icon: "📅" },
+              { l: "Tgl Produksi", v: report.production_date, icon: "🏭" },
+              { l: "Model", v: report.model, icon: "⚙️" },
+              { l: "Warna", v: <ColorTag color={report.color} />, icon: "🎨" },
+            ].map((item, i) => (
+              <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+                <div style={{ fontSize: 16, opacity: 0.6 }}>{item.icon}</div>
+                <div>
+                  <div style={{ fontSize: 10, color: T.muted, textTransform: "uppercase" }}>{item.l}</div>
+                  <div style={{ fontSize: 13, fontWeight: 700 }}>{item.v}</div>
+                </div>
+              </div>
+            ))}
+          </div>
+
+          <div 
+            style={{ 
+              background: T.surface2, 
+              border: `1px solid ${T.border}`, 
+              borderRadius: T.r2, 
+              padding: 16,
+              display: "flex",
+              flexDirection: "column",
+              justifyContent: "center",
+              textAlign: "center",
+              position: "relative",
+              overflow: "hidden"
+            }}
+          >
+            <div style={{ position: "absolute", top: 0, right: 0, padding: 8 }}>
+              <StatusBadge status={report.overall_status} />
+            </div>
+            <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, marginBottom: 4 }}>QC PASS RATE</div>
+            <div style={{ fontSize: 32, fontWeight: 900, color: rate > 98 ? T.green : rate > 95 ? T.yellow : T.red }}>
+              {(100 - rate).toFixed(1)}%
+            </div>
+            <div style={{ height: 6, background: T.border, borderRadius: 3, marginTop: 10, overflow: "hidden" }}>
+               <div style={{ width: `${100 - rate}%`, height: "100%", background: rate > 5 ? T.red : T.green, transition: "width 1s ease" }} />
+            </div>
+            <div style={{ fontSize: 10, color: T.muted, marginTop: 8 }}>
+              Reject Rate: <span style={{ color: T.red, fontWeight: 700 }}>{rate}%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Qty KPIs */}
+        <div
+          style={{
             display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 12
+            gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))",
+            gap: 12,
+            marginBottom: 20
           }}
         >
           {[
-            { l: "Batch No", v: report.batch_no, icon: "📦" },
-            { l: "Inspector", v: report.inspector || "Admin", icon: "👤" },
-            { l: "Tgl Inspeksi", v: (report.inspection_date || "").replace("T", " "), icon: "📅" },
-            { l: "Tgl Produksi", v: report.production_date, icon: "🏭" },
-            { l: "Model", v: report.model, icon: "⚙️" },
-            { l: "Warna", v: <ColorTag color={report.color} />, icon: "🎨" },
-          ].map((item, i) => (
-            <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div style={{ fontSize: 16, opacity: 0.6 }}>{item.icon}</div>
-              <div>
-                <div style={{ fontSize: 10, color: T.muted, textTransform: "uppercase" }}>{item.l}</div>
-                <div style={{ fontSize: 13, fontWeight: 700 }}>{item.v}</div>
-              </div>
+            ["Total Diperiksa", report.qty_inspected, T.blue],
+            ["Reject", report.qty_fail, T.red],
+            ["Rework", report.qty_rework, T.yellow],
+          ].map(([l, v, c]) => (
+            <div key={l} style={{ background: T.surface2, border: `1px solid ${T.border}`, borderRadius: T.r2, padding: "12px 16px", textAlign: "center" }}>
+              <div style={{ fontSize: 10, color: T.muted, textTransform: "uppercase", marginBottom: 4 }}>{l}</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: c }}>{v}</div>
             </div>
           ))}
         </div>
 
+        {/* Defect Details */}
+        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+          <div style={{ background: T.surface2, border: `1px solid ${T.border}`, borderRadius: T.r2, padding: 16 }}>
+            <SectionHeader icon="🔎" first style={{ marginBottom: 12 }}>Detail Defect</SectionHeader>
+            <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: T.muted }}>Kategori:</span>
+                <span style={{ fontWeight: 600 }}>{DEFECT_CATS.find(d => d.v === report.defect_cat)?.l || report.defect_cat || "–"}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: T.muted }}>Lokasi:</span>
+                <span style={{ fontWeight: 600 }}>{report.defect_loc || "–"}</span>
+              </div>
+              <div style={{ display: "flex", justifyContent: "space-between" }}>
+                <span style={{ color: T.muted }}>Stasiun:</span>
+                <span style={{ fontWeight: 600 }}>{report.station || "–"}</span>
+              </div>
+            </div>
+          </div>
+          <div style={{ background: T.surface2, border: `1px solid ${T.border}`, borderRadius: T.r2, padding: 16 }}>
+            <SectionHeader icon="📝" first style={{ marginBottom: 12 }}>Catatan</SectionHeader>
+            <div style={{ fontSize: 13, color: report.notes ? T.text : T.muted, fontStyle: report.notes ? "normal" : "italic" }}>
+              {report.notes || "Tidak ada catatan."}
+            </div>
+          </div>
+        </div>
+
+        {/* Photo Gallery */}
+        {report.images && report.images.length > 0 && (
+          <div style={{ marginBottom: 20 }}>
+            <SectionHeader icon="📸">Foto Defect</SectionHeader>
+            <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+              {report.images.map((img, i) => (
+                <div 
+                  key={i} 
+                  style={{ 
+                    width: 140, 
+                    height: 140, 
+                    borderRadius: T.r2, 
+                    overflow: "hidden", 
+                    border: `1px solid ${T.border}`,
+                    cursor: "pointer",
+                    transition: "transform .2s"
+                  }}
+                  onClick={() => setPreviewUrl(img)}
+                  onMouseEnter={e => e.currentTarget.style.transform = "scale(1.03)"}
+                  onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+                >
+                  <img src={img} alt="Defect" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {/* SN List */}
+        <SectionHeader icon="📟">Serial Numbers ({report.serial_numbers?.length || 0})</SectionHeader>
         <div 
           style={{ 
             background: T.surface2, 
             border: `1px solid ${T.border}`, 
             borderRadius: T.r2, 
-            padding: 16,
+            padding: 12,
             display: "flex",
-            flexDirection: "column",
-            justifyContent: "center",
-            textAlign: "center",
-            position: "relative",
-            overflow: "hidden"
+            flexWrap: "wrap",
+            gap: 6
           }}
         >
-          <div style={{ position: "absolute", top: 0, right: 0, padding: 8 }}>
-            <StatusBadge status={report.overall_status} />
-          </div>
-          <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, marginBottom: 4 }}>QC PASS RATE</div>
-          <div style={{ fontSize: 32, fontWeight: 900, color: rate > 98 ? T.green : rate > 95 ? T.yellow : T.red }}>
-            {(100 - rate).toFixed(1)}%
-          </div>
-          <div style={{ height: 6, background: T.border, borderRadius: 3, marginTop: 10, overflow: "hidden" }}>
-             <div style={{ width: `${100 - rate}%`, height: "100%", background: rate > 5 ? T.red : T.green, transition: "width 1s ease" }} />
-          </div>
-          <div style={{ fontSize: 10, color: T.muted, marginTop: 8 }}>
-            Reject Rate: <span style={{ color: T.red, fontWeight: 700 }}>{rate}%</span>
-          </div>
-        </div>
-      </div>
-
-      {/* Qty KPIs */}
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))",
-          gap: 12,
-          marginBottom: 20
-        }}
-      >
-        {[
-          ["Total Diperiksa", report.qty_inspected, T.blue],
-          ["Reject", report.qty_fail, T.red],
-          ["Rework", report.qty_rework, T.yellow],
-        ].map(([l, v, c]) => (
-          <div key={l} style={{ background: T.surface2, border: `1px solid ${T.border}`, borderRadius: T.r2, padding: "12px 16px", textAlign: "center" }}>
-            <div style={{ fontSize: 10, color: T.muted, textTransform: "uppercase", marginBottom: 4 }}>{l}</div>
-            <div style={{ fontSize: 18, fontWeight: 800, color: c }}>{v}</div>
-          </div>
-        ))}
-      </div>
-
-      {/* Defect Details */}
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
-        <div style={{ background: T.surface2, border: `1px solid ${T.border}`, borderRadius: T.r2, padding: 16 }}>
-          <SectionHeader icon="🔎" first style={{ marginBottom: 12 }}>Detail Defect</SectionHeader>
-          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: T.muted }}>Kategori:</span>
-              <span style={{ fontWeight: 600 }}>{DEFECT_CATS.find(d => d.v === report.defect_cat)?.l || report.defect_cat || "–"}</span>
+          {report.serial_numbers?.map(sn => (
+            <div key={sn} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: 4, padding: "4px 8px", fontSize: 12, fontFamily: T.mono }}>
+              {sn}
             </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: T.muted }}>Lokasi:</span>
-              <span style={{ fontWeight: 600 }}>{report.defect_loc || "–"}</span>
-            </div>
-            <div style={{ display: "flex", justifyContent: "space-between" }}>
-              <span style={{ color: T.muted }}>Stasiun:</span>
-              <span style={{ fontWeight: 600 }}>{report.station || "–"}</span>
-            </div>
-          </div>
+          ))}
         </div>
-        <div style={{ background: T.surface2, border: `1px solid ${T.border}`, borderRadius: T.r2, padding: 16 }}>
-          <SectionHeader icon="📝" first style={{ marginBottom: 12 }}>Catatan</SectionHeader>
-          <div style={{ fontSize: 13, color: report.notes ? T.text : T.muted, fontStyle: report.notes ? "normal" : "italic" }}>
-            {report.notes || "Tidak ada catatan."}
-          </div>
-        </div>
-      </div>
+      </ModalShell>
 
-      {/* Photo Gallery */}
-      {report.images && report.images.length > 0 && (
-        <div style={{ marginBottom: 20 }}>
-          <SectionHeader icon="📸">Foto Defect</SectionHeader>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
-            {report.images.map((img, i) => (
-              <div 
-                key={i} 
-                style={{ 
-                  width: 140, 
-                  height: 140, 
-                  borderRadius: T.r2, 
-                  overflow: "hidden", 
-                  border: `1px solid ${T.border}`,
-                  cursor: "pointer",
-                  transition: "transform .2s"
-                }}
-                onClick={() => window.open(img, "_blank")}
-                onMouseEnter={e => e.currentTarget.style.transform = "scale(1.03)"}
-                onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
-              >
-                <img src={img} alt="Defect" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
-              </div>
-            ))}
+      {/* ── Image Preview Overlay ── */}
+      {previewUrl && (
+        <div 
+          style={{
+            position: "fixed", top: 0, left: 0, right: 0, bottom: 0,
+            background: "rgba(0,0,0,0.85)", backdropFilter: "blur(10px)",
+            zIndex: 9999, display: "flex", alignItems: "center", justifyContent: "center",
+            padding: 40, animation: "slideUp 0.3s ease-out"
+          }}
+          onClick={() => setPreviewUrl(null)}
+        >
+          <div style={{ position: "absolute", top: 20, right: 20 }}>
+            <Btn variant="ghost" style={{ borderRadius: "50%", padding: 12 }} onClick={() => setPreviewUrl(null)}>✕</Btn>
           </div>
+          <img 
+            src={previewUrl} 
+            alt="Preview" 
+            style={{ 
+              maxWidth: "100%", maxHeight: "100%", 
+              borderRadius: T.r2, boxShadow: "0 20px 40px rgba(0,0,0,0.5)",
+              border: `2px solid ${T.border}`
+            }} 
+            onClick={e => e.stopPropagation()} 
+          />
         </div>
       )}
-
-      {/* SN List */}
-      <SectionHeader icon="📟">Serial Numbers ({report.serial_numbers?.length || 0})</SectionHeader>
-      <div 
-        style={{ 
-          background: T.surface2, 
-          border: `1px solid ${T.border}`, 
-          borderRadius: T.r2, 
-          padding: 12,
-          display: "flex",
-          flexWrap: "wrap",
-          gap: 6
-        }}
-      >
-        {report.serial_numbers?.map(sn => (
-          <div key={sn} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: 4, padding: "4px 8px", fontSize: 12, fontFamily: T.mono }}>
-            {sn}
-          </div>
-        ))}
-      </div>
-    </ModalShell>
+    </>
   );
 };
 
