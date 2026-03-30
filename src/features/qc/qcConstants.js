@@ -41,14 +41,14 @@ export const CHECKPOINTS = [
 // INSPECTORS removed as per user request (Shift & Inspector fields deleted)
 
 export const DEFECT_CATS = [
-  { v: "Surface Scratch",     l: "DC01 – Surface Scratch"     },
-  { v: "Color Inconsistency", l: "DC02 – Color Inconsistency" },
-  { v: "Dimensional Defect",  l: "DC03 – Dimensional Defect"  },
-  { v: "Assembly Error",      l: "DC04 – Assembly Error"      },
-  { v: "Electrical Fault",    l: "DC05 – Electrical Fault"    },
-  { v: "Crack/Fracture",      l: "DC06 – Crack/Fracture"      },
-  { v: "Missing Component",   l: "DC07 – Missing Component"   },
-  { v: "Label/Print Error",   l: "DC08 – Label/Print Error"   },
+  { v: "DC01", l: "DC01 – Goresan Permukaan"     },
+  { v: "DC02", l: "DC02 – Inkonsistensi Warna"   },
+  { v: "DC03", l: "DC03 – Defect Dimensi"        },
+  { v: "DC04", l: "DC04 – Kesalahan Perakitan"   },
+  { v: "DC05", l: "DC05 – Kegagalan Elektrik"    },
+  { v: "DC06", l: "DC06 – Retak / Pecah"         },
+  { v: "DC07", l: "DC07 – Komponen Kurang"       },
+  { v: "DC08", l: "DC08 – Masalah Label / Print" },
 ];
 
 export const mkCp = (result = "fail") =>
@@ -63,11 +63,11 @@ export const SEED_USERS = [
 ];
 
 export const SEED_REPORTS = [
-  { id:1, product_id:1, model:"WM1091SK", color:"Blue",   batch_no:"B-WM1091-0001", production_date:"2025-03-01", inspection_date:"2025-03-01T08:30", qty_burning_in:200, qty_produced:200, qty_inspected:200, qty_pass:0, qty_fail:4,  qty_rework:2,  defect_rate:2.00,  defect_cat:"Surface Scratch",    defect_loc:"Top panel",     station:"QA",       overall_status:"fail", notes:"Minor surface scratches on 4 units",     serial_numbers:["SN-BL-20001","SN-BL-20002","SN-BL-20003","SN-BL-20004"], images:[], checkpoints:mkCp(),       created_at:"2025-03-01T08:30:00Z" },
-  { id:2, product_id:1, model:"WM1091SK", color:"Blue",   batch_no:"B-WM1091-0002", production_date:"2025-03-01", inspection_date:"2025-03-01T13:00", qty_burning_in:200, qty_produced:200, qty_inspected:200, qty_pass:0, qty_fail:7,  qty_rework:5,  defect_rate:3.50,  defect_cat:"Color Inconsistency", defect_loc:"Side panel",    station:"Repair",   overall_status:"fail", notes:"Color inconsistency detected",            serial_numbers:["SN-BL-20101","SN-BL-20102"], images:[], checkpoints:mkCp(),       created_at:"2025-03-01T13:00:00Z" },
-  { id:4, product_id:2, model:"WM1091SK", color:"Purple", batch_no:"B-WM1091P-002", production_date:"2025-03-01", inspection_date:"2025-03-01T14:30", qty_burning_in:150, qty_produced:150, qty_inspected:150, qty_pass:0, qty_fail:35, qty_rework:10, defect_rate:23.33, defect_cat:"Dimensional Defect",  defect_loc:"Door frame",    station:"Repair",   overall_status:"fail", notes:"Dimensional defect – stop production",    serial_numbers:["SN-PU-10001","SN-PU-10002"], images:[], checkpoints:mkCp("fail"), created_at:"2025-03-01T14:30:00Z" },
-  { id:6, product_id:4, model:"WM891SK",  color:"Pink",   batch_no:"B-WM891P-001",  production_date:"2025-03-01", inspection_date:"2025-03-01T09:00", qty_burning_in:300, qty_produced:300, qty_inspected:300, qty_pass:0, qty_fail:9,  qty_rework:7,  defect_rate:3.00,  defect_cat:"Assembly Error",      defect_loc:"Drum assembly", station:"Assembly", overall_status:"fail", notes:"Assembly check required",                 serial_numbers:["SN-PK-40001"],               images:[], checkpoints:mkCp(),       created_at:"2025-03-01T09:00:00Z" },
-  { id:8, product_id:4, model:"WM891SK",  color:"Pink",   batch_no:"B-WM891P-002",  production_date:"2025-03-02", inspection_date:"2025-03-02T10:00", qty_burning_in:300, qty_produced:300, qty_inspected:300, qty_pass:0, qty_fail:15, qty_rework:8,  defect_rate:5.00,  defect_cat:"Color Inconsistency", defect_loc:"Front panel",   station:"Repair",   overall_status:"fail", notes:"Pink dye variation",                      serial_numbers:["SN-PK-40101"],               images:[], checkpoints:mkCp(),       created_at:"2025-03-02T10:00:00Z" },
+  { id:1, product_id:1, model:"WM1091SK", color:"Blue",   batch_no:"B-WM1091-0001", production_date:"2025-03-01", inspection_date:"2025-03-01T08:30", qty_burning_in:200, qty_produced:200, qty_inspected:200, qty_pass:0, qty_fail:4,  qty_rework:2,  defect_rate:2.00,  defect_cat:"DC01",    defect_loc:"Top panel",     station:"QA",       overall_status:"fail", notes:"Minor surface scratches on 4 units",     serial_numbers:["SN-BL-20001","SN-BL-20002","SN-BL-20003","SN-BL-20004"], images:[], checkpoints:mkCp(),       created_at:"2025-03-01T08:30:00Z" },
+  { id:2, product_id:1, model:"WM1091SK", color:"Blue",   batch_no:"B-WM1091-0002", production_date:"2025-03-01", inspection_date:"2025-03-01T13:00", qty_burning_in:200, qty_produced:200, qty_inspected:200, qty_pass:0, qty_fail:7,  qty_rework:5,  defect_rate:3.50,  defect_cat:"DC02", defect_loc:"Side panel",    station:"Repair",   overall_status:"fail", notes:"Color inconsistency detected",            serial_numbers:["SN-BL-20101","SN-BL-20102"], images:[], checkpoints:mkCp(),       created_at:"2025-03-01T13:00:00Z" },
+  { id:4, product_id:2, model:"WM1091SK", color:"Purple", batch_no:"B-WM1091P-002", production_date:"2025-03-01", inspection_date:"2025-03-01T14:30", qty_burning_in:150, qty_produced:150, qty_inspected:150, qty_pass:0, qty_fail:35, qty_rework:10, defect_rate:23.33, defect_cat:"DC03",  defect_loc:"Door frame",    station:"Repair",   overall_status:"fail", notes:"Dimensional defect – stop production",    serial_numbers:["SN-PU-10001","SN-PU-10002"], images:[], checkpoints:mkCp("fail"), created_at:"2025-03-01T14:30:00Z" },
+  { id:6, product_id:4, model:"WM891SK",  color:"Pink",   batch_no:"B-WM891P-001",  production_date:"2025-03-01", inspection_date:"2025-03-01T09:00", qty_burning_in:300, qty_produced:300, qty_inspected:300, qty_pass:0, qty_fail:9,  qty_rework:7,  defect_rate:3.00,  defect_cat:"DC04",      defect_loc:"Drum assembly", station:"Assembly", overall_status:"fail", notes:"Assembly check required",                 serial_numbers:["SN-PK-40001"],               images:[], checkpoints:mkCp(),       created_at:"2025-03-01T09:00:00Z" },
+  { id:8, product_id:4, model:"WM891SK",  color:"Pink",   batch_no:"B-WM891P-002",  production_date:"2025-03-02", inspection_date:"2025-03-02T10:00", qty_burning_in:300, qty_produced:300, qty_inspected:300, qty_pass:0, qty_fail:15, qty_rework:8,  defect_rate:5.00,  defect_cat:"DC02", defect_loc:"Front panel",   station:"Repair",   overall_status:"fail", notes:"Pink dye variation",                      serial_numbers:["SN-PK-40101"],               images:[], checkpoints:mkCp(),       created_at:"2025-03-02T10:00:00Z" },
 ];
 
 export const genNo = (id, date) => "QC-" + new Date(date || Date.now()).getFullYear() + "-" + String(id).padStart(4, "0");

@@ -814,13 +814,13 @@ export const ReportTable = ({
                   </td>
                   <td style={{ padding: "12px 14px" }}>
                     <div style={{ display: "flex", gap: 5 }}>
-                      <Btn
-                        variant="blue_outline"
-                        size="xs"
-                        onClick={() => onDetail(r.id)}
-                      >
-                        Detail
-                      </Btn>
+                        <Btn
+                          variant="blue_outline"
+                          size="xs"
+                          onClick={() => onDetail(r.id)}
+                        >
+                          Detail
+                        </Btn>
                       {!mini && canEdit && (
                         <Btn
                           variant="yellow_outline"
@@ -1223,7 +1223,7 @@ export const DefectPicker = ({ open, onClose, onSelect, value, zIndex }) => {
                   letterSpacing: 1,
                 }}
               >
-                {d.v.slice(0, 4)}
+                {d.v}
               </div>
               <div
                 style={{
@@ -1232,7 +1232,7 @@ export const DefectPicker = ({ open, onClose, onSelect, value, zIndex }) => {
                   color: isSelected ? "#fff" : T.text,
                 }}
               >
-                {d.l.split(" – ")[1] || d.l}
+                {d.l.split(/ [–-] /)[1] || d.l}
               </div>
             </div>
           );
@@ -1706,7 +1706,7 @@ export const DetailModal = ({ open, onClose, report, canEdit, onEdit }) => {
           }}
         >
           {[
-            ["Jenis Defect", report.defect_cat],
+            ["Jenis Defect", DEFECT_CATS.find(d => d.v === report.defect_cat)?.l || report.defect_cat],
             ["Lokasi", report.defect_loc || "–"],
             ["Stasiun", report.station || "–"],
           ].map(([l, v]) => (
