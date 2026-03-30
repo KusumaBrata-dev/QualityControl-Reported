@@ -25,7 +25,12 @@ export default function QCReportSystemMain() {
     } catch(e) { return null; }
   });
   
-  const [tab,         setTab]         = useState("dashboard");
+  const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+  const [selectedDate, setSelectedDate] = useState(todayStr);
+
+  const [tab, setTab] = useState(() => localStorage.getItem("qc_active_tab") || "dashboard");
+  useEffect(() => { localStorage.setItem("qc_active_tab", tab); }, [tab]);
+
   const [toastState,  setToastState]  = useState(null);
   const toastTimer = useRef(null);
 
@@ -40,8 +45,7 @@ export default function QCReportSystemMain() {
   const [pwTarget,     setPwTarget]     = useState(null);
   const [confirmAct,   setConfirmAct]   = useState(null);
   
-  const [nextId,       setNextId]       = useState(SEED_REPORTS.length + 1);
-  const [nextUid,      setNextUid]      = useState(SEED_USERS.length  + 1);
+
 
   useEffect(() => {
     const unsubReports = onSnapshot(collection(db, "reports"), snap => {
@@ -172,10 +176,9 @@ export default function QCReportSystemMain() {
   };
   const handleSaveReport = async data => {
     const isEdit = !!data.id;
-    const id = isEdit ? data.id : nextId;
+    const id = isEdit ? data.id : Math.max(0, ...reports.map(r => Number(r.id) || 0)) + 1;
     try {
       await setDoc(doc(db, "reports", String(id)), { ...data, id }, { merge: true });
-      if (!isEdit) setNextId(n => n + 1);
       showToast(isEdit ? "✅ Laporan diupdate!" : "✅ Laporan tersimpan!");
     } catch { showToast("Gagal menyimpan laporan!", "err"); }
     setFormOpen(false);
@@ -197,10 +200,9 @@ export default function QCReportSystemMain() {
   };
   const handleSaveUser = async data => {
     const isEdit = !!data.id;
-    const id = isEdit ? data.id : nextUid;
+    const id = isEdit ? data.id : Math.max(0, ...users.map(u => Number(u.id) || 0)) + 1;
     try {
       await setDoc(doc(db, "users", String(id)), { ...data, id }, { merge: true });
-      if (!isEdit) setNextUid(n => n + 1);
       if (currentUser?.id === id) {
         const { password, ...safe } = { ...data, id };
         setCurrentUser(safe);
@@ -220,11 +222,7 @@ export default function QCReportSystemMain() {
   };
 
   // ── Render ────────────────────────────────────────
-  if (loading) return (
-    <div style={{ display: "flex", alignItems: "center", justifyContent: "center", minHeight: "100vh", background: T.bg, color: T.muted, fontSize: 14 }}>
-      ⏳ Memuat data...
-    </div>
-  );
+  if (loading) return <div style={{ minHeight: "100vh", background: T.bg }} />;
 
   if (!currentUser) return (
     <div className="qc-root">
@@ -244,15 +242,17 @@ export default function QCReportSystemMain() {
         <ErrorBoundary>
           {tab === "dashboard" && (
             <DashboardTemplate reports={reports} canEdit={canEdit} dailyProd={dailyProd} onSaveDailyProd={handleSaveDailyProd}
-            onDetail={handleDetail} onEdit={handleEditReport} onDelete={handleDeleteReport}
-            onNewReport={handleNewReport} />
+              onDetail={handleDetail} onEdit={handleEditReport} onDelete={handleDeleteReport}
+              onNewReport={handleNewReport} selectedDate={selectedDate} onDateChange={setSelectedDate} />
           )}
           {tab === "reports" && (
             <ReportsTemplate reports={reports} canEdit={canEdit}
               onDetail={handleDetail} onEdit={handleEditReport} onDelete={handleDeleteReport}
-              onNewReport={handleNewReport} />
+              onNewReport={handleNewReport} date={selectedDate} onDateChange={setSelectedDate} />
           )}
-          {tab === "matrix" && <MatrixTemplate reports={reports} />}
+          {tab === "matrix" && (
+            <MatrixTemplate reports={reports} selectedDate={selectedDate} onDateChange={setSelectedDate} />
+          )}
           {tab === "users" && isAdmin && (
             <UsersTemplate users={users} currentUser={currentUser}
               onAddUser={handleAddUser} onEdit={handleEditUser}

@@ -81,28 +81,33 @@ export const FilterField = ({ label, children }) => (
 );
 
 /** ModalShell — reusable modal overlay + card */
-export const ModalShell = ({ open, onClose, title, subtitle, maxWidth = 840, headerExtra, footer, children }) => {
+export const ModalShell = ({ open, onClose, title, subtitle, maxWidth = 840, headerExtra, footer, children, zIndex = 200, modalExtra }) => {
   if (!open) return null;
   return (
-    <div onClick={e => e.target === e.currentTarget && onClose()} style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", zIndex: 200, display: "flex", alignItems: "center", justifyContent: "center", padding: 16, backdropFilter: "blur(4px)" }}>
-      <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, width: "100%", maxWidth, maxHeight: "92vh", overflowY: "auto", boxShadow: "0 32px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.05)" }}>
-        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "18px 24px", borderBottom: `1px solid ${T.border}`, position: "sticky", top: 0, background: T.surface, zIndex: 2 }}>
+    <div onClick={e => e.target === e.currentTarget && onClose()} 
+      style={{ position: "fixed", inset: 0, background: "rgba(0,0,0,.7)", zIndex, display: "flex", alignItems: "center", justifyContent: "center", padding: "12px", backdropFilter: "blur(4px)" }}>
+      <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, width: "100%", maxWidth, maxHeight: "96vh", display: "flex", flexDirection: "column", boxShadow: "0 32px 80px rgba(0,0,0,.6), 0 0 0 1px rgba(255,255,255,.05)" }}>
+        {/* Header */}
+        <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "16px 20px", borderBottom: `1px solid ${T.border}`, background: T.surface, borderTopLeftRadius: 16, borderTopRightRadius: 16 }}>
           <div>
             <div style={{ fontSize: 15, fontWeight: 800 }}>{title}</div>
-            {subtitle && <div style={{ fontSize: 12, color: T.muted, marginTop: 1 }}>{subtitle}</div>}
+            {subtitle && <div style={{ fontSize: 11, color: T.muted, marginTop: 1 }}>{subtitle}</div>}
           </div>
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             {headerExtra}
-            <Btn variant="ghost" size="sm" onClick={onClose}>✕ Tutup</Btn>
+            <Btn variant="ghost" size="sm" onClick={onClose} style={{ padding: "4px 8px" }}>✕</Btn>
           </div>
         </div>
-        <div style={{ padding: 24 }}>{children}</div>
+        {/* Content */}
+        <div style={{ padding: "20px", overflowY: "auto", flex: 1 }}>{children}</div>
+        {/* Footer */}
         {footer && (
-          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, padding: "16px 24px", borderTop: `1px solid ${T.border}`, position: "sticky", bottom: 0, background: T.surface }}>
+          <div style={{ display: "flex", justifyContent: "flex-end", gap: 10, padding: "12px 20px", borderTop: `1px solid ${T.border}`, background: T.surface, borderBottomLeftRadius: 16, borderBottomRightRadius: 16 }}>
             {footer}
           </div>
         )}
       </div>
+      {modalExtra}
     </div>
   );
 };

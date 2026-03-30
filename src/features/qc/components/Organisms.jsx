@@ -1,97 +1,361 @@
 import React, { useState, useEffect } from "react";
-import { PieChart, Pie, Cell, BarChart, Bar, XAxis, YAxis, Tooltip, Legend, CartesianGrid, ResponsiveContainer } from "recharts";
-import { T, PRODUCTS, COLOR_HEX, genNo, drColor, mkCp, DEFECT_CATS, INSPECTORS } from "../qcConstants";
-import { Badge, Btn, KpiCard, ProgressBar, ColorTag, Avatar, TextInput, SelectInput, TextareaInput, FieldLabel, SectionHeader, StatusBadge, StationBadge, RoleBadge, StatMini, Card, CardHeader } from "./Atoms";
-import { ClockDisplay, NavUserChip, SNChip, CheckpointRow, ModalShell } from "./Molecules";
+import {
+  PieChart,
+  Pie,
+  Cell,
+  BarChart,
+  Bar,
+  XAxis,
+  YAxis,
+  Tooltip,
+  Legend,
+  CartesianGrid,
+  ResponsiveContainer,
+} from "recharts";
+import {
+  T,
+  PRODUCTS,
+  COLOR_HEX,
+  genNo,
+  drColor,
+  mkCp,
+  DEFECT_CATS,
+  INSPECTORS,
+} from "../qcConstants";
+import {
+  Badge,
+  Btn,
+  KpiCard,
+  ProgressBar,
+  ColorTag,
+  Avatar,
+  TextInput,
+  SelectInput,
+  TextareaInput,
+  FieldLabel,
+  SectionHeader,
+  StatusBadge,
+  StationBadge,
+  RoleBadge,
+  StatMini,
+  Card,
+  CardHeader,
+} from "./Atoms";
+import {
+  ClockDisplay,
+  NavUserChip,
+  SNChip,
+  CheckpointRow,
+  ModalShell,
+} from "./Molecules";
 
 /** LoginOrganism — full login screen */
 export const LoginOrganism = ({ users, onLogin }) => {
-  const [uname,   setUname]   = useState("");
-  const [pass,    setPass]    = useState("");
-  const [error,   setError]   = useState("");
+  const [uname, setUname] = useState("");
+  const [pass, setPass] = useState("");
+  const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
 
   const handle = () => {
-    setError(""); setLoading(true);
+    setError("");
+    setLoading(true);
     setTimeout(() => {
-      if (!uname || !pass) { setError("⚠ Username dan password wajib diisi"); setLoading(false); return; }
-      const user = users.find(u => u.username === uname.toLowerCase());
-      if (!user)        { setError("❌ Username tidak ditemukan");        setLoading(false); return; }
-      if (!user.active) { setError("⛔ Akun nonaktif. Hubungi Admin."); setLoading(false); return; }
-      if (user.password !== pass) { setError("❌ Password salah"); setPass(""); setLoading(false); return; }
+      if (!uname || !pass) {
+        setError("⚠ Username dan password wajib diisi");
+        setLoading(false);
+        return;
+      }
+      const user = users.find((u) => u.username === uname.toLowerCase());
+      if (!user) {
+        setError("❌ Username tidak ditemukan");
+        setLoading(false);
+        return;
+      }
+      if (!user.active) {
+        setError("⛔ Akun nonaktif. Hubungi Admin.");
+        setLoading(false);
+        return;
+      }
+      if (user.password !== pass) {
+        setError("❌ Password salah");
+        setPass("");
+        setLoading(false);
+        return;
+      }
       onLogin(user);
     }, 600);
   };
 
   return (
-    <div style={{
-      position: "fixed", inset: 0, zIndex: 9999,
-      display: "flex", alignItems: "center", justifyContent: "center",
-      background: T.bg,
-      backgroundImage: `radial-gradient(ellipse at 20% 30%, rgba(47,129,247,.08) 0%, transparent 55%),
+    <div
+      style={{
+        position: "fixed",
+        inset: 0,
+        zIndex: 9999,
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        background: T.bg,
+        backgroundImage: `radial-gradient(ellipse at 20% 30%, rgba(47,129,247,.08) 0%, transparent 55%),
                         radial-gradient(ellipse at 80% 70%, rgba(163,113,247,.06) 0%, transparent 55%)`,
-    }}>
-      <div className="qc-login-card" style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: 16, padding: "40px 44px", width: "100%", maxWidth: 420, boxShadow: "0 0 0 1px rgba(255,255,255,.04), 0 8px 32px rgba(0,0,0,.5)" }}>
+      }}
+    >
+      <div
+        className="qc-login-card"
+        style={{
+          background: T.surface,
+          border: `1px solid ${T.border}`,
+          borderRadius: 16,
+          padding: "40px 44px",
+          width: "100%",
+          maxWidth: 420,
+          boxShadow:
+            "0 0 0 1px rgba(255,255,255,.04), 0 8px 32px rgba(0,0,0,.5)",
+        }}
+      >
         {/* Brand */}
-        <div style={{ display: "flex", alignItems: "center", gap: 12, marginBottom: 32, justifyContent: "center" }}>
-          <div style={{ width: 44, height: 44, background: `linear-gradient(135deg,${T.blueD},${T.blue})`, borderRadius: 10, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 20, boxShadow: "0 0 16px rgba(47,129,247,.3)" }}>🔬</div>
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 12,
+            marginBottom: 32,
+            justifyContent: "center",
+          }}
+        >
+          <div
+            style={{
+              width: 44,
+              height: 44,
+              background: `linear-gradient(135deg,${T.blueD},${T.blue})`,
+              borderRadius: 10,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              fontSize: 20,
+              boxShadow: "0 0 16px rgba(47,129,247,.3)",
+            }}
+          >
+            🔬
+          </div>
           <div>
-            <div style={{ fontSize: 18, fontWeight: 800 }}>QC Report System</div>
-            <div style={{ fontSize: 10, color: T.muted, letterSpacing: "2px", textTransform: "uppercase" }}>WM Series · Quality Control</div>
+            <div style={{ fontSize: 18, fontWeight: 800 }}>
+              QC Report System
+            </div>
+            <div
+              style={{
+                fontSize: 10,
+                color: T.muted,
+                letterSpacing: "2px",
+                textTransform: "uppercase",
+              }}
+            >
+              WM Series · Quality Control
+            </div>
           </div>
         </div>
-        <div style={{ fontSize: 22, fontWeight: 700, textAlign: "center", marginBottom: 6 }}>Selamat Datang</div>
-        <div style={{ fontSize: 13, color: T.muted, textAlign: "center", marginBottom: 28 }}>Masuk untuk mengakses sistem laporan QC</div>
+        <div
+          style={{
+            fontSize: 22,
+            fontWeight: 700,
+            textAlign: "center",
+            marginBottom: 6,
+          }}
+        >
+          Selamat Datang
+        </div>
+        <div
+          style={{
+            fontSize: 13,
+            color: T.muted,
+            textAlign: "center",
+            marginBottom: 28,
+          }}
+        >
+          Masuk untuk mengakses sistem laporan QC
+        </div>
 
-        {error && <div style={{ background: "rgba(248,81,73,.1)", border: "1px solid rgba(248,81,73,.3)", borderRadius: T.r, padding: "10px 14px", fontSize: 12.5, color: T.red, marginBottom: 16, textAlign: "center" }}>{error}</div>}
+        {error && (
+          <div
+            style={{
+              background: "rgba(248,81,73,.1)",
+              border: "1px solid rgba(248,81,73,.3)",
+              borderRadius: T.r,
+              padding: "10px 14px",
+              fontSize: 12.5,
+              color: T.red,
+              marginBottom: 16,
+              textAlign: "center",
+            }}
+          >
+            {error}
+          </div>
+        )}
 
         <div style={{ marginBottom: 16 }}>
           <FieldLabel>Username</FieldLabel>
-          <TextInput value={uname} onChange={setUname} placeholder="Masukkan username…" />
+          <TextInput
+            value={uname}
+            onChange={setUname}
+            placeholder="Masukkan username…"
+          />
         </div>
         <div style={{ marginBottom: 4 }}>
           <FieldLabel>Password</FieldLabel>
-          <TextInput value={pass} onChange={setPass} placeholder="Masukkan password…" type="password" />
+          <TextInput
+            value={pass}
+            onChange={setPass}
+            placeholder="Masukkan password…"
+            type="password"
+          />
         </div>
 
-        <button onClick={handle} disabled={loading} style={{ width: "100%", background: `linear-gradient(135deg,${T.blueD},${T.blue})`, color: "#fff", border: "none", borderRadius: T.r, padding: 12, fontSize: 15, fontWeight: 700, fontFamily: T.font, cursor: loading ? "not-allowed" : "pointer", boxShadow: "0 4px 16px rgba(47,129,247,.3)", opacity: loading ? 0.8 : 1, marginTop: 16 }}>
+        <button
+          onClick={handle}
+          disabled={loading}
+          style={{
+            width: "100%",
+            background: `linear-gradient(135deg,${T.blueD},${T.blue})`,
+            color: "#fff",
+            border: "none",
+            borderRadius: T.r,
+            padding: 12,
+            fontSize: 15,
+            fontWeight: 700,
+            fontFamily: T.font,
+            cursor: loading ? "not-allowed" : "pointer",
+            boxShadow: "0 4px 16px rgba(47,129,247,.3)",
+            opacity: loading ? 0.8 : 1,
+            marginTop: 16,
+          }}
+        >
           {loading ? "⏳ Memverifikasi…" : "🔐 Masuk"}
         </button>
-        <div style={{ textAlign: "center", marginTop: 20, fontSize: 11, color: T.muted2 }}>QC Report System v3.0</div>
+
+        <div
+          style={{
+            textAlign: "center",
+            marginTop: 20,
+            fontSize: 11,
+            color: T.muted2,
+          }}
+        >
+          QC Report System v3.0
+        </div>
       </div>
     </div>
   );
 };
 
 /** NavbarOrganism — top navigation */
-export const NavbarOrganism = ({ user, tab, onTabChange, canEdit, isAdmin, onNewReport, onLogout }) => (
-  <nav style={{ background: T.surface, borderBottom: `1px solid ${T.border}`, position: "sticky", top: 0, zIndex: 100 }}>
-    <div className="qc-nav-inner" style={{ maxWidth: 1500, margin: "0 auto", padding: "0 24px", display: "flex", alignItems: "center", justifyContent: "space-between", height: 54 }}>
+export const NavbarOrganism = ({
+  user,
+  tab,
+  onTabChange,
+  canEdit,
+  isAdmin,
+  onNewReport,
+  onLogout,
+}) => (
+  <nav
+    style={{
+      background: T.surface,
+      borderBottom: `1px solid ${T.border}`,
+      position: "sticky",
+      top: 0,
+      zIndex: 100,
+    }}
+  >
+    <div
+      className="qc-nav-inner"
+      style={{
+        maxWidth: 1500,
+        margin: "0 auto",
+        padding: "0 24px",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        height: 54,
+      }}
+    >
       {/* Logo */}
       <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-        <div style={{ width: 32, height: 32, background: `linear-gradient(135deg,${T.blueD},${T.blue})`, borderRadius: 8, display: "flex", alignItems: "center", justifyContent: "center", fontSize: 16 }}>🔬</div>
+        <div
+          style={{
+            width: 32,
+            height: 32,
+            background: `linear-gradient(135deg,${T.blueD},${T.blue})`,
+            borderRadius: 8,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            fontSize: 16,
+          }}
+        >
+          🔬
+        </div>
         <div>
           <div style={{ fontSize: 14, fontWeight: 800 }}>QC Report System</div>
-          <div style={{ fontSize: 9, color: T.muted, letterSpacing: "1.8px", textTransform: "uppercase" }}>WM Series</div>
+          <div
+            style={{
+              fontSize: 9,
+              color: T.muted,
+              letterSpacing: "1.8px",
+              textTransform: "uppercase",
+            }}
+          >
+            WM Series
+          </div>
         </div>
       </div>
       {/* Tabs */}
       <div className="qc-nav-tabs" style={{ display: "flex", gap: 2 }}>
         {[
           { key: "dashboard", label: "📊 Dashboard" },
-          { key: "reports",   label: "📋 Laporan QC" },
-          { key: "matrix",    label: "🎨 Defect Compare" },
+          { key: "reports", label: "📋 Laporan QC" },
+          { key: "matrix", label: "🎨 Defect Compare" },
           ...(isAdmin ? [{ key: "users", label: "👥 Kelola User" }] : []),
-        ].map(t => (
-          <button key={t.key} onClick={() => onTabChange(t.key)} style={{ padding: "6px 14px", borderRadius: 6, border: "none", background: tab === t.key ? "rgba(47,129,247,.15)" : "transparent", color: tab === t.key ? T.blue : T.muted, fontSize: 13, fontWeight: 600, fontFamily: T.font, cursor: "pointer", display: "flex", alignItems: "center", gap: 6 }}>{t.label}</button>
+        ].map((t) => (
+          <button
+            key={t.key}
+            onClick={() => onTabChange(t.key)}
+            style={{
+              padding: "6px 14px",
+              borderRadius: 6,
+              border: "none",
+              background:
+                tab === t.key ? "rgba(47,129,247,.15)" : "transparent",
+              color: tab === t.key ? T.blue : T.muted,
+              fontSize: 13,
+              fontWeight: 600,
+              fontFamily: T.font,
+              cursor: "pointer",
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+            }}
+          >
+            {t.label}
+          </button>
         ))}
       </div>
       {/* Right */}
-      <div className="qc-nav-right" style={{ display: "flex", alignItems: "center", gap: 8 }}>
-        <div className="qc-clock"><ClockDisplay /></div>
-        {canEdit && <Btn variant="primary" size="sm" onClick={onNewReport}>+ Laporan Baru</Btn>}
+      <div
+        className="qc-nav-right"
+        style={{ display: "flex", alignItems: "center", gap: 8 }}
+      >
+        <div className="qc-clock">
+          <ClockDisplay />
+        </div>
+        {canEdit && (
+          <Btn variant="primary" size="sm" onClick={onNewReport}>
+            + Laporan Baru
+          </Btn>
+        )}
         <NavUserChip user={user} />
-        <Btn variant="ghost" size="sm" onClick={onLogout}>Logout</Btn>
+        <Btn variant="ghost" size="sm" onClick={onLogout}>
+          Logout
+        </Btn>
       </div>
     </div>
   </nav>
@@ -100,23 +364,64 @@ export const NavbarOrganism = ({ user, tab, onTabChange, canEdit, isAdmin, onNew
 /** DashboardKPIs — 4-card KPI grid + alert */
 export const DashboardKPIs = ({ reports, burningInQty }) => {
   const totFail = reports.reduce((a, r) => a + (Number(r.qty_fail) || 0), 0);
-  const totInsp = reports.reduce((a, r) => a + (Number(r.qty_inspected) || 0), 0);
-  
+  const totInsp =
+    reports.reduce((a, r) => a + (Number(r.qty_inspected) || 1), 0) || 1; // Fallback to 1 to avoid /0
+
   // DR = Total Fail / Burning In (if provided). Else fallback to Total Fail / Total Inspected.
   const baseQty = burningInQty > 0 ? burningInQty : totInsp;
-  const drRate  = baseQty > 0 ? ((totFail / baseQty) * 100).toFixed(2) : "0.00";
+  const drRate = baseQty > 0 ? ((totFail / baseQty) * 100).toFixed(2) : "0.00";
 
   return (
     <>
       {totFail > 0 && (
-        <div style={{ padding: "12px 16px", borderRadius: T.r, fontSize: 13, background: "rgba(210,153,34,.1)", border: "1px solid rgba(210,153,34,.25)", color: T.yellow, marginBottom: 16, display: "flex", alignItems: "center", gap: 10 }}>
-          ⚠ Terdapat <strong>{totFail} unit REJECT</strong> pada hari ini – perhatikan defect rate!
+        <div
+          style={{
+            padding: "12px 16px",
+            borderRadius: T.r,
+            fontSize: 13,
+            background: "rgba(210,153,34,.1)",
+            border: "1px solid rgba(210,153,34,.25)",
+            color: T.yellow,
+            marginBottom: 16,
+            display: "flex",
+            alignItems: "center",
+            gap: 10,
+          }}
+        >
+          ⚠ Terdapat <strong>{totFail} unit REJECT</strong> pada hari ini –
+          perhatikan defect rate!
         </div>
       )}
-      <div className="qc-kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14, marginBottom: 20 }}>
-        <KpiCard colorKey="blue"   icon="🔥" label="Barang Masuk" value={burningInQty || "-"} />
-        <KpiCard colorKey="red"    icon="🚫" label="Total Defect / Reject" value={totFail} />
-        <KpiCard colorKey="yellow" icon="📉" label="Defect Rate %" value={`${drRate}%`} sub={burningInQty ? "Dari Total Barang Masuk" : "Dari Total Diperiksa"} />
+      <div
+        className="qc-kpi-grid"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3,1fr)",
+          gap: 14,
+          marginBottom: 20,
+        }}
+      >
+        <KpiCard
+          colorKey="blue"
+          icon="🔥"
+          label="Barang Masuk"
+          value={burningInQty || "-"}
+        />
+        <KpiCard
+          colorKey="red"
+          icon="🚫"
+          label="Total Defect / Reject"
+          value={totFail}
+        />
+        <KpiCard
+          colorKey="yellow"
+          icon="📉"
+          label="Defect Rate %"
+          value={`${drRate}%`}
+          sub={
+            burningInQty ? "Dari Total Barang Masuk" : "Dari Total Diperiksa"
+          }
+        />
       </div>
     </>
   );
@@ -124,73 +429,192 @@ export const DashboardKPIs = ({ reports, burningInQty }) => {
 
 /** DashboardCharts — Pie (status) + Bar (defect rate per varian), filterable by date */
 export const DashboardCharts = ({ reports, selectedDate, burningInQty }) => {
-  const filtered = selectedDate ? reports.filter(r => (r.inspection_date || "").startsWith(selectedDate)) : reports;
-  
+  const filtered = selectedDate
+    ? reports.filter((r) => (r.inspection_date || "").startsWith(selectedDate))
+    : reports;
+
   const passQty = filtered.reduce((a, r) => a + (Number(r.qty_pass) || 0), 0);
   const failQty = filtered.reduce((a, r) => a + (Number(r.qty_fail) || 0), 0);
   // Belum Diperiksa (hanya relevan jika burningInQty dimasukkan)
-  const belumDiperiksa = burningInQty > 0 ? Math.max(0, burningInQty - (passQty + failQty)) : 0;
+  const belumDiperiksa =
+    burningInQty > 0 ? Math.max(0, burningInQty - (passQty + failQty)) : 0;
 
-  const pieData = burningInQty > 0 
-    ? [{ name: "Pass", value: passQty }, { name: "Fail", value: failQty }, { name: "Belum Diperiksa", value: belumDiperiksa }]
-    : [{ name: "Pass", value: passQty }, { name: "Fail", value: failQty }];
+  const pieData =
+    burningInQty > 0
+      ? [
+          { name: "Pass", value: passQty },
+          { name: "Fail", value: failQty },
+          { name: "Belum Diperiksa", value: belumDiperiksa },
+        ]
+      : [
+          { name: "Pass", value: passQty },
+          { name: "Fail", value: failQty },
+        ];
 
-  const PIE_COLORS = burningInQty > 0 ? [T.green, T.red, T.muted2] : [T.green, T.red];
+  const PIE_COLORS =
+    burningInQty > 0 ? [T.green, T.red, T.muted2] : [T.green, T.red];
 
   const barData = Object.entries(PRODUCTS).map(([id, prod]) => {
-    const rs   = filtered.filter(r => r.product_id === Number(id));
-    const varTotalInsp = rs.reduce((a, r) => a + (Number(r.qty_inspected)||0), 0);
-    const varTotalFail = rs.reduce((a, r) => a + (Number(r.qty_fail)||0), 0);
-    // Defect rate per varian menggunakan basis total diperiksa karena kita gak tau burningin per varian
-    const rate = varTotalInsp > 0 ? +(varTotalFail / varTotalInsp * 100).toFixed(2) : 0;
-    return { name: `${prod.model} – ${prod.color}`, value: rate, fill: COLOR_HEX[prod.color] };
+    const rs = filtered.filter((r) => r.product_id === Number(id));
+    const pass = rs.reduce((a, r) => Number(a) + (Number(r.qty_pass) || 0), 0);
+    const fail = rs.reduce((a, r) => Number(a) + (Number(r.qty_fail) || 0), 0);
+    // Use the exact hex code from COLOR_HEX or fallback to a neutral color
+    const fill = COLOR_HEX[prod.color] || T.muted2;
+    return {
+      name: `${prod.model} - ${prod.color}`,
+      short: prod.color,
+      pass,
+      fail,
+      fill,
+    };
   });
 
-  const ttStyle = { background: T.surface2, border: `1px solid ${T.border}`, borderRadius: T.r, color: T.text };
+  const ttStyle = {
+    background: T.surface2,
+    border: `1px solid ${T.border}`,
+    borderRadius: T.r,
+    color: T.text,
+    fontSize: 12,
+  };
   const noData = filtered.length === 0;
+
   return (
-    <div className="qc-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 2fr", gap: 16, marginBottom: 18 }}>
+    <div
+      className="qc-grid-2"
+      style={{
+        display: "grid",
+        gridTemplateColumns: "1fr 2fr",
+        gap: 16,
+        marginBottom: 18,
+      }}
+    >
       <Card>
-        <CardHeader title="Perbandingan Total Masuk vs Inspeksi" />
+        <CardHeader title="Total Masuk vs Inspeksi" />
         <div style={{ padding: 20, height: 260 }}>
           {noData && !burningInQty ? (
-            <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: T.muted, gap: 8 }}>
+            <div
+              style={{
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                color: T.muted,
+                gap: 8,
+              }}
+            >
               <div style={{ fontSize: 32 }}>📭</div>
-              <div style={{ fontSize: 13 }}>Tidak ada data untuk tanggal ini</div>
+              <div style={{ fontSize: 13 }}>
+                Tidak ada data untuk tanggal ini
+              </div>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
               <PieChart>
-                <Pie data={pieData} cx="50%" cy="45%" innerRadius={55} outerRadius={85} dataKey="value" paddingAngle={2}>
-                  {pieData.map((_, i) => <Cell key={i} fill={PIE_COLORS[i]} />)}
+                <Pie
+                  data={pieData}
+                  cx="50%"
+                  cy="45%"
+                  innerRadius={55}
+                  outerRadius={80}
+                  dataKey="value"
+                  paddingAngle={2}
+                >
+                  {pieData.map((_, i) => (
+                    <Cell key={i} fill={PIE_COLORS[i]} />
+                  ))}
                 </Pie>
                 <Tooltip contentStyle={ttStyle} formatter={(v) => [v, "Qty"]} />
-                <Legend wrapperStyle={{ color: T.muted, fontSize: 12 }} />
+                <Legend
+                  iconType="circle"
+                  wrapperStyle={{ color: T.muted, fontSize: 11 }}
+                />
               </PieChart>
             </ResponsiveContainer>
           )}
         </div>
       </Card>
+
       <Card>
-        <CardHeader title="Defect Rate Harian per Varian (%)" actions={
-          <span style={{ fontSize: 11, color: T.muted }}>{selectedDate || "Semua tanggal"}</span>
-        } />
+        <CardHeader
+          title="Qty Produksi (Pass) & Defect (Fail)"
+          actions={
+            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+              <span style={{ fontSize: 10, color: T.blue, fontWeight: 700 }}>
+                LIVE SYNC 🟢
+              </span>
+              <span style={{ fontSize: 11, color: T.muted }}>
+                {selectedDate || "Semua data"} ({filtered.length})
+              </span>
+            </div>
+          }
+        />
         <div style={{ padding: 20, height: 260 }}>
           {noData ? (
-            <div style={{ height: "100%", display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", color: T.muted, gap: 8 }}>
+            <div
+              style={{
+                height: "100%",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                justifyContent: "center",
+                color: T.muted,
+                gap: 8,
+              }}
+            >
               <div style={{ fontSize: 32 }}>📊</div>
-              <div style={{ fontSize: 13 }}>Tidak ada laporan untuk tanggal ini</div>
+              <div style={{ fontSize: 13 }}>
+                Tidak ada laporan untuk tanggal ini
+              </div>
             </div>
           ) : (
             <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={barData} margin={{ top: 4, right: 8, left: 0, bottom: 28 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.04)" />
-                <XAxis dataKey="name" tick={{ fill: T.muted, fontSize: 11, fontFamily: T.font }} angle={-15} textAnchor="end" />
-                <YAxis tick={{ fill: T.muted, fontSize: 11 }} tickFormatter={v => `${v}%`} />
-                <Tooltip formatter={v => [`${v}%`, "Avg Defect Rate"]} contentStyle={ttStyle} />
-                <Bar dataKey="value" radius={[6, 6, 0, 0]}>
-                  {barData.map((d, i) => <Cell key={i} fill={d.fill} />)}
+              <BarChart
+                data={barData}
+                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                barGap={6}
+              >
+                <CartesianGrid
+                  strokeDasharray="3 3"
+                  stroke="rgba(255,255,255,.04)"
+                  vertical={false}
+                />
+                <XAxis
+                  dataKey="name"
+                  tick={{
+                    fill: T.muted,
+                    fontSize: 9,
+                    fontWeight: 700,
+                    fontFamily: T.font,
+                  }}
+                  interval={0}
+                  hide={false}
+                />
+                <YAxis tick={{ fill: T.muted, fontSize: 10 }} />
+                <Tooltip
+                  contentStyle={ttStyle}
+                  cursor={{ fill: "rgba(255,255,255,.03)" }}
+                />
+                <Legend
+                  verticalAlign="top"
+                  height={36}
+                  wrapperStyle={{ fontSize: 12 }}
+                />
+                <Bar
+                  dataKey="pass"
+                  name="Unit Lulus (Sesuai Warna)"
+                  radius={[4, 4, 0, 0]}
+                >
+                  {barData.map((d, i) => (
+                    <Cell key={i} fill={d.fill} />
+                  ))}
                 </Bar>
+                <Bar
+                  dataKey="fail"
+                  name="Unit Gagal (Reject)"
+                  fill={T.red}
+                  radius={[4, 4, 0, 0]}
+                />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -201,70 +625,284 @@ export const DashboardCharts = ({ reports, selectedDate, burningInQty }) => {
 };
 
 /** ReportTable — full / mini mode */
-export const ReportTable = ({ data, mini = false, canEdit, onDetail, onEdit, onDelete }) => {
+export const ReportTable = ({
+  data,
+  mini = false,
+  canEdit,
+  onDetail,
+  onEdit,
+  onDelete,
+}) => {
   const [page, setPage] = useState(1);
-  useEffect(() => { setPage(1); }, [data.length]);
+  useEffect(() => {
+    setPage(1);
+  }, [data.length]);
 
-  if (!data.length) return <div style={{ padding: 32, textAlign: "center", color: T.muted }}>Tidak ada data</div>;
-  
-  const limit = mini ? 8 : 10;
+  if (!data.length)
+    return (
+      <div style={{ padding: 32, textAlign: "center", color: T.muted }}>
+        Tidak ada data
+      </div>
+    );
+
+  const limit = 10;
   const totalPages = Math.ceil(data.length / limit);
-  const currentData = mini ? data.slice(0, 8) : data.slice((page - 1) * limit, page * limit);
+  const currentData = data.slice((page - 1) * limit, page * limit);
 
-  const fullCols  = ["Report No","Model","Warna","Batch","Tgl Inspeksi","Barang Masuk","Produksi","Pass","Fail","Defect%","Stasiun","SN","Status","Aksi"];
-  const miniCols  = ["Report No","Model","Warna","Batch","Tgl Inspeksi","Barang Masuk","Pass","Fail","Defect%","Status","Aksi"];
-  const numCols   = new Set(["Barang Masuk","Produksi","Pass","Fail","Defect%"]);
-  const cols      = mini ? miniCols : fullCols;
+  const fullCols = [
+    "Report No",
+    "Model",
+    "Warna",
+    "Batch",
+    "Tgl Inspeksi",
+    "Barang Masuk",
+    "Produksi",
+    "Pass",
+    "Fail",
+    "Defect%",
+    "Stasiun",
+    "SN",
+    "Status",
+    "Aksi",
+  ];
+  const miniCols = [
+    "Report No",
+    "Model",
+    "Warna",
+    "Batch",
+    "Tgl Inspeksi",
+    "Barang Masuk",
+    "Pass",
+    "Fail",
+    "Defect%",
+    "Status",
+    "Aksi",
+  ];
+  const numCols = new Set([
+    "Barang Masuk",
+    "Produksi",
+    "Pass",
+    "Fail",
+    "Defect%",
+  ]);
+  const cols = mini ? miniCols : fullCols;
   return (
     <>
       <div style={{ overflowX: "auto" }}>
-        <table style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}>
+        <table
+          style={{ width: "100%", borderCollapse: "collapse", fontSize: 13 }}
+        >
           <thead>
             <tr style={{ borderBottom: `1px solid ${T.border}` }}>
-              {cols.map(c => <th key={c} style={{ padding: "11px 14px", fontSize: 10.5, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: "1px", whiteSpace: "nowrap", textAlign: numCols.has(c) ? "right" : "left", background: T.surface }}>{c}</th>)}
+              {cols.map((c) => (
+                <th
+                  key={c}
+                  style={{
+                    padding: "11px 14px",
+                    fontSize: 10.5,
+                    fontWeight: 700,
+                    color: T.muted,
+                    textTransform: "uppercase",
+                    letterSpacing: "1px",
+                    whiteSpace: "nowrap",
+                    textAlign: numCols.has(c) ? "right" : "left",
+                    background: T.surface,
+                  }}
+                >
+                  {c}
+                </th>
+              ))}
             </tr>
           </thead>
           <tbody>
-            {currentData.map(r => {
-              const rate    = r.defect_rate || 0;
+            {currentData.map((r) => {
+              const rate = r.defect_rate || 0;
               const snCount = (r.serial_numbers || []).length;
               return (
-                <tr key={r.id} style={{ borderBottom: `1px solid ${T.border2}`, transition: "background .1s" }}>
-                  <td style={{ padding: "12px 14px" }}><span style={{ fontFamily: T.mono, fontSize: 12, color: T.blue }}>{genNo(r.id, r.created_at)}</span></td>
-                <td style={{ padding: "12px 14px" }}><strong>{r.model}</strong></td>
-                <td style={{ padding: "12px 14px" }}><ColorTag color={r.color} /></td>
-                <td style={{ padding: "12px 14px" }}><span style={{ fontFamily: T.mono, fontSize: 12, color: T.muted }}>{r.batch_no}</span></td>
-                <td style={{ padding: "12px 14px", fontSize: 12, color: T.muted }}>{(r.inspection_date || "").slice(0, 10)}</td>
-                <td style={{ padding: "12px 14px", textAlign: "right", fontFamily: T.mono, color: T.blue }}>{r.qty_burning_in || "-"}</td>
-                {!mini && <td style={{ padding: "12px 14px", textAlign: "right", fontFamily: T.mono }}>{r.qty_produced}</td>}
-                <td style={{ padding: "12px 14px", textAlign: "right", fontFamily: T.mono, color: T.green }}>{r.qty_pass}</td>
-                <td style={{ padding: "12px 14px", textAlign: "right", fontFamily: T.mono, color: T.red }}>{r.qty_fail}</td>
-                <td style={{ padding: "12px 14px", textAlign: "right" }}><span style={{ fontFamily: T.mono, fontWeight: 700, color: drColor(rate) }}>{rate.toFixed(2)}%</span></td>
-                {!mini && <td style={{ padding: "12px 14px" }}><StationBadge station={r.station} /></td>}
-                {!mini && <td style={{ padding: "12px 14px" }}>{snCount > 0 ? <Badge type="fail" style={{ fontSize: 10 }}>📟 {snCount}</Badge> : <span style={{ color: T.muted2, fontSize: 11 }}>–</span>}</td>}
-                <td style={{ padding: "12px 14px" }}><StatusBadge status={r.overall_status} /></td>
-                <td style={{ padding: "12px 14px" }}>
-                  <div style={{ display: "flex", gap: 5 }}>
-                    <Btn variant="blue_outline" size="xs" onClick={() => onDetail(r.id)}>Detail</Btn>
-                    {!mini && canEdit && <Btn variant="yellow_outline" size="xs" onClick={() => onEdit(r.id)}>Edit</Btn>}
-                    {!mini && canEdit && <Btn variant="red_outline"    size="xs" onClick={() => onDelete(r.id)}>Hapus</Btn>}
-                  </div>
-                </td>
-              </tr>
-            );
-          })}
-        </tbody>
-      </table>
-    </div>
-    {!mini && totalPages > 1 && (
-      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", padding: "12px 16px", borderTop: `1px solid ${T.border}`, background: T.surface }}>
-        <span style={{ fontSize: 12, color: T.muted }}>Halaman {page} dari {totalPages}</span>
-        <div style={{ display: "flex", gap: 8 }}>
-          <Btn variant="ghost" size="sm" onClick={() => setPage(p => Math.max(1, p - 1))} disabled={page === 1}>← Prev</Btn>
-          <Btn variant="ghost" size="sm" onClick={() => setPage(p => Math.min(totalPages, p + 1))} disabled={page === totalPages}>Next →</Btn>
-        </div>
+                <tr
+                  key={r.id}
+                  style={{
+                    borderBottom: `1px solid ${T.border2}`,
+                    transition: "background .1s",
+                  }}
+                >
+                  <td style={{ padding: "12px 14px" }}>
+                    <span
+                      style={{
+                        fontFamily: T.mono,
+                        fontSize: 12,
+                        color: T.blue,
+                      }}
+                    >
+                      {genNo(r.id, r.created_at)}
+                    </span>
+                  </td>
+                  <td style={{ padding: "12px 14px" }}>
+                    <strong>{r.model}</strong>
+                  </td>
+                  <td style={{ padding: "12px 14px" }}>
+                    <ColorTag color={r.color} />
+                  </td>
+                  <td style={{ padding: "12px 14px" }}>
+                    <span
+                      style={{
+                        fontFamily: T.mono,
+                        fontSize: 12,
+                        color: T.muted,
+                      }}
+                    >
+                      {r.batch_no}
+                    </span>
+                  </td>
+                  <td
+                    style={{
+                      padding: "12px 14px",
+                      fontSize: 12,
+                      color: T.muted,
+                    }}
+                  >
+                    {(r.inspection_date || "").slice(0, 10)}
+                  </td>
+                  <td
+                    style={{
+                      padding: "12px 14px",
+                      textAlign: "right",
+                      fontFamily: T.mono,
+                      color: T.blue,
+                    }}
+                  >
+                    {r.qty_burning_in || "-"}
+                  </td>
+                  {!mini && (
+                    <td
+                      style={{
+                        padding: "12px 14px",
+                        textAlign: "right",
+                        fontFamily: T.mono,
+                      }}
+                    >
+                      {r.qty_produced}
+                    </td>
+                  )}
+                  <td
+                    style={{
+                      padding: "12px 14px",
+                      textAlign: "right",
+                      fontFamily: T.mono,
+                      color: T.green,
+                    }}
+                  >
+                    {r.qty_pass}
+                  </td>
+                  <td
+                    style={{
+                      padding: "12px 14px",
+                      textAlign: "right",
+                      fontFamily: T.mono,
+                      color: T.red,
+                    }}
+                  >
+                    {r.qty_fail}
+                  </td>
+                  <td style={{ padding: "12px 14px", textAlign: "right" }}>
+                    <span
+                      style={{
+                        fontFamily: T.mono,
+                        fontWeight: 700,
+                        color: drColor(rate),
+                      }}
+                    >
+                      {rate.toFixed(2)}%
+                    </span>
+                  </td>
+                  {!mini && (
+                    <td style={{ padding: "12px 14px" }}>
+                      <StationBadge station={r.station} />
+                    </td>
+                  )}
+                  {!mini && (
+                    <td style={{ padding: "12px 14px" }}>
+                      {snCount > 0 ? (
+                        <Badge type="fail" style={{ fontSize: 10 }}>
+                          📟 {snCount}
+                        </Badge>
+                      ) : (
+                        <span style={{ color: T.muted2, fontSize: 11 }}>–</span>
+                      )}
+                    </td>
+                  )}
+                  <td style={{ padding: "12px 14px" }}>
+                    <StatusBadge status={r.overall_status} />
+                  </td>
+                  <td style={{ padding: "12px 14px" }}>
+                    <div style={{ display: "flex", gap: 5 }}>
+                      <Btn
+                        variant="blue_outline"
+                        size="xs"
+                        onClick={() => onDetail(r.id)}
+                      >
+                        Detail
+                      </Btn>
+                      {!mini && canEdit && (
+                        <Btn
+                          variant="yellow_outline"
+                          size="xs"
+                          onClick={() => onEdit(r.id)}
+                        >
+                          Edit
+                        </Btn>
+                      )}
+                      {!mini && canEdit && (
+                        <Btn
+                          variant="red_outline"
+                          size="xs"
+                          onClick={() => onDelete(r.id)}
+                        >
+                          Hapus
+                        </Btn>
+                      )}
+                    </div>
+                  </td>
+                </tr>
+              );
+            })}
+          </tbody>
+        </table>
       </div>
-    )}
+      {totalPages > 1 && (
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            padding: "12px 16px",
+            borderTop: `1px solid ${T.border}`,
+            background: T.surface,
+          }}
+        >
+          <span style={{ fontSize: 12, color: T.muted }}>
+            Halaman {page} dari {totalPages}
+          </span>
+          <div style={{ display: "flex", gap: 8 }}>
+            <Btn
+              variant="ghost"
+              size="sm"
+              onClick={() => setPage((p) => Math.max(1, p - 1))}
+              disabled={page === 1}
+            >
+              ← Prev
+            </Btn>
+            <Btn
+              variant="ghost"
+              size="sm"
+              onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
+              disabled={page === totalPages}
+            >
+              Next →
+            </Btn>
+          </div>
+        </div>
+      )}
     </>
   );
 };
@@ -272,44 +910,124 @@ export const ReportTable = ({ data, mini = false, canEdit, onDetail, onEdit, onD
 /** MatrixOrganism — variant comparison grid + stacked bar */
 export const MatrixOrganism = ({ reports }) => {
   const groups = [
-    { model: "WM1091SK", variants: [{ name: "Blue", pid: 1 }, { name: "Purple", pid: 2 }] },
-    { model: "WM891SK",  variants: [{ name: "Aqua",  pid: 3 }, { name: "Pink",   pid: 4 }] },
+    {
+      model: "WM1091SK",
+      variants: [
+        { name: "Blue", pid: 1 },
+        { name: "Purple", pid: 2 },
+      ],
+    },
+    {
+      model: "WM891SK",
+      variants: [
+        { name: "Aqua", pid: 3 },
+        { name: "Pink", pid: 4 },
+      ],
+    },
   ];
-  const stackedData = [1, 2, 3, 4].map(pid => {
-    const rs   = reports.filter(r => r.product_id === pid);
+  const stackedData = [1, 2, 3, 4].map((pid) => {
+    const rs = reports.filter((r) => r.product_id === pid);
     const prod = PRODUCTS[pid];
-    return { name: `${prod.model} – ${prod.color}`, Pass: rs.filter(r => r.overall_status === "pass").length, Fail: rs.filter(r => r.overall_status === "fail").length };
+    return {
+      name: `${prod.model} – ${prod.color}`,
+      Pass: rs.filter((r) => r.overall_status === "pass").length,
+      Fail: rs.filter((r) => r.overall_status === "fail").length,
+    };
   });
-  const ttStyle = { background: T.surface2, border: `1px solid ${T.border}`, borderRadius: T.r, color: T.text };
+  const ttStyle = {
+    background: T.surface2,
+    border: `1px solid ${T.border}`,
+    borderRadius: T.r,
+    color: T.text,
+  };
   return (
     <>
-      <div className="qc-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 18 }}>
-        {groups.map(g => (
+      <div
+        className="qc-grid-2"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 16,
+          marginBottom: 18,
+        }}
+      >
+        {groups.map((g) => (
           <Card key={g.model}>
             <div style={{ padding: 20 }}>
-              <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 14 }}>📦 {g.model}</div>
+              <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 14 }}>
+                📦 {g.model}
+              </div>
               {g.variants.map((v, ci) => {
-                const rs      = reports.filter(r => r.product_id === v.pid);
-                const p       = rs.filter(r => r.overall_status === "pass").length;
-                const f       = rs.filter(r => r.overall_status === "fail").length;
-                const avgDR   = rs.length ? (rs.reduce((a, r) => a + r.defect_rate, 0) / rs.length).toFixed(1) : "0.0";
-                const tInsp   = rs.reduce((a, r) => a + r.qty_inspected, 0);
-                const passRate = rs.length ? Math.round(p / rs.length * 100) : 0;
-                const lc      = COLOR_HEX[v.name];
+                const rs = reports.filter((r) => r.product_id === v.pid);
+                const p = rs.filter((r) => r.overall_status === "pass").length;
+                const f = rs.filter((r) => r.overall_status === "fail").length;
+                const avgDR = rs.length
+                  ? (
+                      rs.reduce((a, r) => a + r.defect_rate, 0) / rs.length
+                    ).toFixed(1)
+                  : "0.0";
+                const tInsp = rs.reduce((a, r) => a + r.qty_inspected, 0);
+                const passRate = rs.length
+                  ? Math.round((p / rs.length) * 100)
+                  : 0;
+                const lc = COLOR_HEX[v.name];
                 return (
-                  <div key={v.name} style={{ border: `1px solid ${T.border}`, borderLeft: `3px solid ${lc}`, borderRadius: T.r, padding: 14, marginTop: ci > 0 ? 10 : 0 }}>
-                    <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 10 }}>
+                  <div
+                    key={v.name}
+                    style={{
+                      border: `1px solid ${T.border}`,
+                      borderLeft: `3px solid ${lc}`,
+                      borderRadius: T.r,
+                      padding: 14,
+                      marginTop: ci > 0 ? 10 : 0,
+                    }}
+                  >
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        alignItems: "center",
+                        marginBottom: 10,
+                      }}
+                    >
                       <ColorTag color={v.name} />
-                      <span style={{ fontSize: 12, color: T.muted }}>{rs.length} batch</span>
+                      <span style={{ fontSize: 12, color: T.muted }}>
+                        {rs.length} batch
+                      </span>
                     </div>
-                    <div className="qc-kpi-grid" style={{ display: "grid", gridTemplateColumns: "repeat(4,1fr)", gap: 8, marginBottom: 10 }}>
+                    <div
+                      className="qc-kpi-grid"
+                      style={{
+                        display: "grid",
+                        gridTemplateColumns: "repeat(4,1fr)",
+                        gap: 8,
+                        marginBottom: 10,
+                      }}
+                    >
                       <StatMini label="Pass" value={p} color={T.green} />
                       <StatMini label="Fail" value={f} color={T.red} />
-                      <StatMini label="Avg DR" value={`${avgDR}%`} color={drColor(Number(avgDR))} />
-                      <StatMini label="Inspected" value={tInsp.toLocaleString()} color={T.blue} />
+                      <StatMini
+                        label="Avg DR"
+                        value={`${avgDR}%`}
+                        color={drColor(Number(avgDR))}
+                      />
+                      <StatMini
+                        label="Inspected"
+                        value={tInsp.toLocaleString()}
+                        color={T.blue}
+                      />
                     </div>
-                    <div style={{ display: "flex", justifyContent: "space-between", fontSize: 11, color: T.muted, marginBottom: 5 }}>
-                      <span>Pass Rate</span><span style={{ fontWeight: 700 }}>{passRate}%</span>
+                    <div
+                      style={{
+                        display: "flex",
+                        justifyContent: "space-between",
+                        fontSize: 11,
+                        color: T.muted,
+                        marginBottom: 5,
+                      }}
+                    >
+                      <span>Pass Rate</span>
+                      <span style={{ fontWeight: 700 }}>{passRate}%</span>
                     </div>
                     <ProgressBar value={passRate} color={lc} />
                   </div>
@@ -323,14 +1041,30 @@ export const MatrixOrganism = ({ reports }) => {
         <CardHeader title="Perbandingan Pass / Fail per Varian" />
         <div style={{ padding: 20, height: 280 }}>
           <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={stackedData} margin={{ top: 4, right: 8, left: 0, bottom: 28 }}>
-              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.04)" />
-              <XAxis dataKey="name" tick={{ fill: T.muted, fontSize: 12, fontFamily: T.font }} angle={-15} textAnchor="end" />
+            <BarChart
+              data={stackedData}
+              margin={{ top: 4, right: 8, left: 0, bottom: 28 }}
+            >
+              <CartesianGrid
+                strokeDasharray="3 3"
+                stroke="rgba(255,255,255,.04)"
+              />
+              <XAxis
+                dataKey="name"
+                tick={{ fill: T.muted, fontSize: 12, fontFamily: T.font }}
+                angle={-15}
+                textAnchor="end"
+              />
               <YAxis tick={{ fill: T.muted, fontSize: 12 }} />
               <Tooltip contentStyle={ttStyle} />
               <Legend wrapperStyle={{ color: T.muted, fontSize: 12 }} />
               <Bar dataKey="Pass" stackId="a" fill={T.green} />
-              <Bar dataKey="Fail" stackId="a" fill={T.red} radius={[4, 4, 0, 0]} />
+              <Bar
+                dataKey="Fail"
+                stackId="a"
+                fill={T.red}
+                radius={[4, 4, 0, 0]}
+              />
             </BarChart>
           </ResponsiveContainer>
         </div>
@@ -340,30 +1074,106 @@ export const MatrixOrganism = ({ reports }) => {
 };
 
 /** UserGrid — user management card grid */
-export const UserGrid = ({ users, currentUser, onEdit, onDelete, onChangePw }) => {
-  if (!users.length) return <div style={{ textAlign: "center", color: T.muted, padding: 40 }}>Belum ada user</div>;
+export const UserGrid = ({
+  users,
+  currentUser,
+  onEdit,
+  onDelete,
+  onChangePw,
+}) => {
+  if (!users.length)
+    return (
+      <div style={{ textAlign: "center", color: T.muted, padding: 40 }}>
+        Belum ada user
+      </div>
+    );
   return (
-    <div className="qc-grid-3" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}>
-      {users.map(u => {
+    <div
+      className="qc-grid-3"
+      style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}
+    >
+      {users.map((u) => {
         const isMe = currentUser && u.id === currentUser.id;
         return (
-          <div key={u.id} style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.r2, padding: 20, position: "relative" }}>
+          <div
+            key={u.id}
+            style={{
+              background: T.surface,
+              border: `1px solid ${T.border}`,
+              borderRadius: T.r2,
+              padding: 20,
+              position: "relative",
+            }}
+          >
             <div style={{ position: "absolute", top: 16, right: 16 }}>
-              {u.active ? <Badge type="pass">✓ Aktif</Badge> : <Badge type="fail">⛔ Nonaktif</Badge>}
+              {u.active ? (
+                <Badge type="pass">✓ Aktif</Badge>
+              ) : (
+                <Badge type="fail">⛔ Nonaktif</Badge>
+              )}
             </div>
             <Avatar name={u.name} role={u.role} size={42} />
-            <div style={{ fontSize: 14, fontWeight: 800, marginTop: 10, marginBottom: 2 }}>
-              {u.name}{isMe && <span style={{ fontSize: 11, color: T.muted }}> (Anda)</span>}
+            <div
+              style={{
+                fontSize: 14,
+                fontWeight: 800,
+                marginTop: 10,
+                marginBottom: 2,
+              }}
+            >
+              {u.name}
+              {isMe && (
+                <span style={{ fontSize: 11, color: T.muted }}> (Anda)</span>
+              )}
             </div>
-            <div style={{ fontSize: 11, color: T.muted, fontFamily: T.mono, marginBottom: 8 }}>@{u.username}</div>
+            <div
+              style={{
+                fontSize: 11,
+                color: T.muted,
+                fontFamily: T.mono,
+                marginBottom: 8,
+              }}
+            >
+              @{u.username}
+            </div>
             <RoleBadge role={u.role} />
             <div style={{ fontSize: 11, color: T.muted2, marginTop: 6 }}>
-              Dibuat: {u.created_at ? new Date(u.created_at).toLocaleDateString("id-ID") : "–"}
+              Dibuat:{" "}
+              {u.created_at
+                ? new Date(u.created_at).toLocaleDateString("id-ID")
+                : "–"}
             </div>
-            <div style={{ display: "flex", gap: 6, marginTop: 14, flexWrap: "wrap" }}>
-              <Btn variant="blue_outline"   size="xs" onClick={() => onEdit(u.id)}>✏️ Edit</Btn>
-              <Btn variant="yellow_outline" size="xs" onClick={() => onChangePw(u.id, u.name)}>🔑 Password</Btn>
-              {!isMe && <Btn variant="red_outline" size="xs" onClick={() => onDelete(u.id)}>🗑️</Btn>}
+            <div
+              style={{
+                display: "flex",
+                gap: 6,
+                marginTop: 14,
+                flexWrap: "wrap",
+              }}
+            >
+              <Btn
+                variant="blue_outline"
+                size="xs"
+                onClick={() => onEdit(u.id)}
+              >
+                ✏️ Edit
+              </Btn>
+              <Btn
+                variant="yellow_outline"
+                size="xs"
+                onClick={() => onChangePw(u.id, u.name)}
+              >
+                🔑 Password
+              </Btn>
+              {!isMe && (
+                <Btn
+                  variant="red_outline"
+                  size="xs"
+                  onClick={() => onDelete(u.id)}
+                >
+                  🗑️
+                </Btn>
+              )}
             </div>
           </div>
         );
@@ -373,43 +1183,103 @@ export const UserGrid = ({ users, currentUser, onEdit, onDelete, onChangePw }) =
 };
 
 /** DefectPicker — sophisticated modal for selecting defect categories */
-export const DefectPicker = ({ open, onClose, onSelect, value }) => {
+export const DefectPicker = ({ open, onClose, onSelect, value, zIndex }) => {
   const [search, setSearch] = useState("");
-  const filtered = DEFECT_CATS.filter(d => 
-    d.l.toLowerCase().includes(search.toLowerCase()) || 
-    d.v.toLowerCase().includes(search.toLowerCase())
+  const filtered = DEFECT_CATS.filter(
+    (d) =>
+      d.l.toLowerCase().includes(search.toLowerCase()) ||
+      d.v.toLowerCase().includes(search.toLowerCase()),
   );
 
-  useEffect(() => { if (open) setSearch(""); }, [open]);
+  useEffect(() => {
+    if (open) setSearch("");
+  }, [open]);
 
   return (
-    <ModalShell open={open} onClose={onClose} title="🔎 Pilih Kategori Defect" maxWidth={600}
-      subtitle="Cari atau pilih salah satu jenis kerusakan di bawah ini">
-      
+    <ModalShell
+      open={open}
+      onClose={onClose}
+      title="🔎 Pilih Kategori Defect"
+      maxWidth={600}
+      subtitle="Cari atau pilih salah satu jenis kerusakan di bawah ini"
+      zIndex={zIndex}
+    >
       <div style={{ marginBottom: 20 }}>
-        <TextInput value={search} onChange={setSearch} placeholder="Cari nama atau kode defect (contoh: DC01)..." 
-          style={{ padding: "12px 16px", fontSize: 15, borderRadius: 12, border: `1px solid ${T.blue}` }} />
+        <TextInput
+          value={search}
+          onChange={setSearch}
+          placeholder="Cari nama atau kode defect (contoh: DC01)..."
+          style={{
+            padding: "12px 16px",
+            fontSize: 15,
+            borderRadius: 12,
+            border: `1px solid ${T.blue}`,
+          }}
+        />
       </div>
 
-      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 10, maxHeight: 400, overflowY: "auto", paddingRight: 4 }}>
-        {filtered.map(d => {
+      <div
+        className="qc-grid-2"
+        style={{
+          display: "grid",
+          gap: 10,
+          maxHeight: 400,
+          overflowY: "auto",
+          paddingRight: 4,
+        }}
+      >
+        {filtered.map((d) => {
           const isSelected = d.v === value;
           return (
-            <div key={d.v} onClick={() => { onSelect(d.v); onClose(); }} 
-              style={{ 
-                padding: "14px 16px", borderRadius: T.r2, cursor: "pointer", 
+            <div
+              key={d.v}
+              onClick={() => {
+                onSelect(d.v);
+                onClose();
+              }}
+              style={{
+                padding: "14px 16px",
+                borderRadius: T.r2,
+                cursor: "pointer",
                 background: isSelected ? T.blueL : T.surface2,
                 border: `1px solid ${isSelected ? T.blue : T.border}`,
                 transition: "all .2s ease",
-                display: "flex", flexDirection: "column", gap: 4
-              }}>
-              <div style={{ fontSize: 11, fontWeight: 700, color: isSelected ? T.blue : T.muted, letterSpacing: 1 }}>{d.v.slice(0, 4)}</div>
-              <div style={{ fontSize: 13, fontWeight: 700, color: isSelected ? "#fff" : T.text }}>{d.l.split(" – ")[1] || d.l}</div>
+                display: "flex",
+                flexDirection: "column",
+                gap: 4,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: isSelected ? T.blue : T.muted,
+                  letterSpacing: 1,
+                }}
+              >
+                {d.v.slice(0, 4)}
+              </div>
+              <div
+                style={{
+                  fontSize: 13,
+                  fontWeight: 700,
+                  color: isSelected ? "#fff" : T.text,
+                }}
+              >
+                {d.l.split(" – ")[1] || d.l}
+              </div>
             </div>
           );
         })}
         {filtered.length === 0 && (
-          <div style={{ gridColumn: "1 / -1", textAlign: "center", padding: 40, color: T.muted }}>
+          <div
+            style={{
+              gridColumn: "1 / -1",
+              textAlign: "center",
+              padding: 40,
+              color: T.muted,
+            }}
+          >
             Tidak ada kategori defect yang cocok.
           </div>
         )}
@@ -419,20 +1289,38 @@ export const DefectPicker = ({ open, onClose, onSelect, value }) => {
 };
 
 /** ReportFormOrganism — create / edit report modal */
-export const ReportFormOrganism = ({ open, onClose, editReport, onSave, showToast }) => {
+export const ReportFormOrganism = ({
+  open,
+  onClose,
+  editReport,
+  onSave,
+  showToast,
+}) => {
   const empty = () => {
-    const localISO = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString();
+    const localISO = new Date(
+      Date.now() - new Date().getTimezoneOffset() * 60000,
+    ).toISOString();
     return {
-      product_id: "", batch_no: "",
+      product_id: "",
+      batch_no: "",
       production_date: localISO.split("T")[0],
       inspection_date: localISO.slice(0, 16),
-      qty_burning_in: "", qty_produced: "", qty_inspected: "", qty_pass: "", qty_fail: "", qty_rework: "",
-      defect_cat: "", defect_loc: "", station: "", overall_status: "pass", notes: "",
+      qty_burning_in: "",
+      qty_produced: "",
+      qty_inspected: "",
+      qty_pass: "",
+      qty_fail: "",
+      qty_rework: "",
+      defect_cat: "",
+      defect_loc: "",
+      station: "",
+      overall_status: "pass",
+      notes: "",
     };
   };
 
-  const [form,    setForm]    = useState(empty());
-  const [snList,  setSnList]  = useState([]);
+  const [form, setForm] = useState(empty());
+  const [snList, setSnList] = useState([]);
   const [snInput, setSnInput] = useState("");
   const [cpState, setCpState] = useState(mkCp());
   const [pickerOpen, setPickerOpen] = useState(false);
@@ -442,12 +1330,21 @@ export const ReportFormOrganism = ({ open, onClose, editReport, onSave, showToas
     if (editReport) {
       const r = editReport;
       setForm({
-        product_id: r.product_id, batch_no: r.batch_no,
-        production_date: r.production_date, inspection_date: r.inspection_date,
-        qty_burning_in: r.qty_burning_in || "", qty_produced: r.qty_produced, qty_inspected: r.qty_inspected,
-        qty_pass: r.qty_pass, qty_fail: r.qty_fail, qty_rework: r.qty_rework,
-        defect_cat: r.defect_cat || "", defect_loc: r.defect_loc || "",
-        station: r.station || "", overall_status: r.overall_status, notes: r.notes || "",
+        product_id: r.product_id,
+        batch_no: r.batch_no,
+        production_date: r.production_date,
+        inspection_date: r.inspection_date,
+        qty_burning_in: r.qty_burning_in || "",
+        qty_produced: r.qty_produced,
+        qty_inspected: r.qty_inspected,
+        qty_pass: r.qty_pass,
+        qty_fail: r.qty_fail,
+        qty_rework: r.qty_rework,
+        defect_cat: r.defect_cat || "",
+        defect_loc: r.defect_loc || "",
+        station: r.station || "",
+        overall_status: r.overall_status,
+        notes: r.notes || "",
       });
       setSnList(r.serial_numbers || []);
       setCpState(r.checkpoints || mkCp());
@@ -460,92 +1357,305 @@ export const ReportFormOrganism = ({ open, onClose, editReport, onSave, showToas
     setPickerOpen(false);
   }, [open, editReport]);
 
-  const setF      = (k, v)        => setForm(f => ({ ...f, [k]: v }));
-  const updateCp  = (i, key, val) => setCpState(s => s.map((c, idx) => idx === i ? { ...c, [key]: val } : c));
-  const addSN     = () => {
+  const setF = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const updateCp = (i, key, val) =>
+    setCpState((s) =>
+      s.map((c, idx) => (idx === i ? { ...c, [key]: val } : c)),
+    );
+  const addSN = () => {
     const val = snInput.trim().toUpperCase();
     if (!val) return;
-    if (snList.includes(val)) { showToast("SN sudah ada!", "err"); return; }
-    setSnList(s => [...s, val]); setSnInput("");
+    if (snList.includes(val)) {
+      showToast("SN sudah ada!", "err");
+      return;
+    }
+    setSnList((s) => [...s, val]);
+    setSnInput("");
   };
 
   const handleSave = () => {
-    if (!form.product_id || !form.batch_no) { showToast("Produk dan Batch wajib diisi!", "err"); return; }
-    const prod          = PRODUCTS[form.product_id];
+    if (!form.product_id || !form.batch_no) {
+      showToast("Produk dan Batch wajib diisi!", "err");
+      return;
+    }
+    const prod = PRODUCTS[form.product_id];
     const qty_burning_in = Number(form.qty_burning_in) || 0;
     const qty_inspected = Number(form.qty_inspected) || 0;
-    const qty_fail      = Number(form.qty_fail)      || 0;
-    const defect_rate   = qty_inspected ? +(qty_fail / qty_inspected * 100).toFixed(2) : 0;
+    const qty_fail = snList.length;
+    const qty_pass = Math.max(0, qty_inspected - qty_fail);
+    const defect_rate = qty_inspected
+      ? +((qty_fail / qty_inspected) * 100).toFixed(2)
+      : 0;
     onSave({
-      ...(editReport ? { id: editReport.id, created_at: editReport.created_at } : { created_at: new Date().toISOString() }),
-      product_id: Number(form.product_id), model: prod.model, color: prod.color,
-      batch_no: form.batch_no, production_date: form.production_date,
+      ...(editReport
+        ? { id: editReport.id, created_at: editReport.created_at }
+        : { created_at: new Date().toISOString() }),
+      product_id: Number(form.product_id),
+      model: prod.model,
+      color: prod.color,
+      batch_no: form.batch_no,
+      production_date: form.production_date,
       inspection_date: form.inspection_date,
       qty_burning_in,
-      qty_produced: Number(form.qty_produced) || 0, qty_inspected,
-      qty_pass: Number(form.qty_pass) || 0, qty_fail,
-      qty_rework: Number(form.qty_rework) || 0, defect_rate,
-      defect_cat: form.defect_cat, defect_loc: form.defect_loc,
-      station: form.station, overall_status: form.overall_status,
-      notes: form.notes, serial_numbers: [...snList], images: [],
-      checkpoints: cpState.map(c => ({ ...c })),
+      qty_produced: Number(form.qty_produced) || 0,
+      qty_inspected,
+      qty_pass,
+      qty_fail,
+      qty_rework: Number(form.qty_rework) || 0,
+      defect_rate,
+      defect_cat: form.defect_cat,
+      defect_loc: form.defect_loc,
+      station: form.station,
+      overall_status: form.overall_status,
+      notes: form.notes,
+      serial_numbers: [...snList],
+      images: [],
+      checkpoints: cpState.map((c) => ({ ...c })),
     });
   };
 
   return (
-    <ModalShell open={open} onClose={onClose} title={editReport ? "✏️ Edit Laporan QC" : "+ Laporan QC Baru"} maxWidth={840}
-      footer={<><Btn variant="ghost" onClick={onClose}>Batal</Btn><Btn variant="success" onClick={handleSave}>💾 Simpan Laporan</Btn></>}>
-
-      <SectionHeader icon="📟" first>Serial Number Unit Reject</SectionHeader>
-      <div style={{ background: "rgba(47,129,247,.06)", border: "1px dashed rgba(47,129,247,.3)", borderRadius: T.r2, padding: 14 }}>
-        <div style={{ fontSize: 10.5, fontWeight: 700, color: T.blue, textTransform: "uppercase", letterSpacing: "1.2px", marginBottom: 8 }}>Scan atau ketik SN unit REJECT</div>
-        <div style={{ display: "flex", gap: 8 }}>
-          <TextInput value={snInput} onChange={setSnInput} placeholder="Scan barcode / ketik SN lalu Enter…" style={{ flex: 1 }} />
-          <Btn variant="primary" size="sm" onClick={addSN}>+ Tambah</Btn>
+    <ModalShell
+      open={open}
+      onClose={onClose}
+      title={editReport ? "✏️ Edit Laporan QC" : "+ Laporan QC Baru"}
+      maxWidth={840}
+      footer={
+        <>
+          <Btn variant="ghost" onClick={onClose}>
+            Batal
+          </Btn>
+          <Btn variant="success" onClick={handleSave}>
+            💾 Simpan Laporan
+          </Btn>
+        </>
+      }
+      modalExtra={
+        <DefectPicker
+          open={pickerOpen}
+          onClose={() => setPickerOpen(false)}
+          value={form.defect_cat}
+          onSelect={(v) => setF("defect_cat", v)}
+          zIndex={500}
+        />
+      }
+    >
+      <SectionHeader icon="📟" first>
+        Serial Number Unit Reject
+      </SectionHeader>
+      <div
+        style={{
+          background: "rgba(47,129,247,.06)",
+          border: "1px dashed rgba(47,129,247,.3)",
+          borderRadius: T.r2,
+          padding: 14,
+        }}
+      >
+        <div
+          style={{
+            fontSize: 10.5,
+            fontWeight: 700,
+            color: T.blue,
+            textTransform: "uppercase",
+            letterSpacing: "1.2px",
+            marginBottom: 8,
+          }}
+        >
+          Scan atau ketik SN unit REJECT
         </div>
-        {snList.length > 0 && <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}>{snList.map(sn => <SNChip key={sn} sn={sn} onRemove={() => setSnList(s => s.filter(x => x !== sn))} />)}</div>}
-        <div style={{ fontSize: 11, color: T.muted, marginTop: 6 }}>Total: <span style={{ fontWeight: 700, color: T.red }}>{snList.length}</span> SN</div>
+        <div style={{ display: "flex", gap: 8 }}>
+          <TextInput
+            value={snInput}
+            onChange={setSnInput}
+            placeholder="Scan barcode / ketik SN lalu Enter…"
+            style={{ flex: 1 }}
+          />
+          <Btn variant="primary" size="sm" onClick={addSN}>
+            + Tambah
+          </Btn>
+        </div>
+        {snList.length > 0 && (
+          <div
+            style={{ display: "flex", flexWrap: "wrap", gap: 6, marginTop: 8 }}
+          >
+            {snList.map((sn) => (
+              <SNChip
+                key={sn}
+                sn={sn}
+                onRemove={() => setSnList((s) => s.filter((x) => x !== sn))}
+              />
+            ))}
+          </div>
+        )}
+        <div style={{ fontSize: 11, color: T.muted, marginTop: 6 }}>
+          Total:{" "}
+          <span style={{ fontWeight: 700, color: T.red }}>{snList.length}</span>{" "}
+          SN
+        </div>
       </div>
 
-      <SectionHeader icon="📦">Informasi Produk</SectionHeader>
-      <div className="qc-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14, marginBottom: 20 }}>
-        <div><FieldLabel>Produk & Warna *</FieldLabel>
-          <SelectInput value={form.product_id} onChange={v => setF("product_id", v)}>
+      <SectionHeader icon="🔎">Metrik Inspeksi</SectionHeader>
+      <div
+        className="qc-grid-4"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gap: 14,
+          marginBottom: 20,
+        }}
+      >
+        <div>
+          <FieldLabel>Total Diperiksa *</FieldLabel>
+          <TextInput
+            type="number"
+            value={form.qty_inspected}
+            onChange={(v) => setF("qty_inspected", v)}
+            placeholder="0"
+          />
+        </div>
+        <div>
+          <FieldLabel>Unit Lulus (Pass)</FieldLabel>
+          <TextInput
+            type="number"
+            value={Math.max(
+              0,
+              (Number(form.qty_inspected) || 0) - snList.length,
+            )}
+            disabled
+            style={{ opacity: 0.7, background: T.surface2 }}
+          />
+        </div>
+        <div>
+          <FieldLabel>Unit Gagal (Fail)</FieldLabel>
+          <TextInput
+            type="number"
+            value={snList.length}
+            disabled
+            style={{
+              opacity: 0.7,
+              background: T.surface2,
+              color: T.red,
+              fontWeight: 700,
+            }}
+          />
+        </div>
+        <div>
+          <FieldLabel>Unit Rework</FieldLabel>
+          <TextInput
+            type="number"
+            value={form.qty_rework}
+            onChange={(v) => setF("qty_rework", v)}
+            placeholder="0"
+          />
+        </div>
+      </div>
+
+      <SectionHeader icon="📦">Informasi Produk & Batch</SectionHeader>
+      <div
+        className="qc-grid-2"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "1fr 1fr",
+          gap: 14,
+          marginBottom: 20,
+        }}
+      >
+        <div>
+          <FieldLabel>Produk & Warna *</FieldLabel>
+          <SelectInput
+            value={form.product_id}
+            onChange={(v) => setF("product_id", v)}
+          >
             <option value="">— Pilih Produk —</option>
-            <optgroup label="WM1091SK"><option value="1">WM1091SK – Blue</option><option value="2">WM1091SK – Purple</option></optgroup>
-            <optgroup label="WM891SK"><option value="3">WM891SK – Aqua</option><option value="4">WM891SK – Pink</option></optgroup>
+            <optgroup label="WM1091SK">
+              <option value="1">WM1091SK – Blue</option>
+              <option value="2">WM1091SK – Purple</option>
+            </optgroup>
+            <optgroup label="WM891SK">
+              <option value="3">WM891SK – Aqua</option>
+              <option value="4">WM891SK – Pink</option>
+            </optgroup>
           </SelectInput>
         </div>
-        <div><FieldLabel>Batch No *</FieldLabel><TextInput value={form.batch_no} onChange={v => setF("batch_no", v)} placeholder="B-WM1091-0001" /></div>
-        <div><FieldLabel>Tanggal Produksi *</FieldLabel><TextInput type="date" value={form.production_date} onChange={v => setF("production_date", v)} /></div>
-        <div><FieldLabel>Tanggal & Waktu Inspeksi *</FieldLabel><TextInput type="datetime-local" value={form.inspection_date} onChange={v => setF("inspection_date", v)} /></div>
+        <div>
+          <FieldLabel>Batch No *</FieldLabel>
+          <TextInput
+            value={form.batch_no}
+            onChange={(v) => setF("batch_no", v)}
+            placeholder="B-WM1091-0001"
+          />
+        </div>
+        <div>
+          <FieldLabel>Tanggal & Waktu Inspeksi *</FieldLabel>
+          <TextInput
+            type="datetime-local"
+            value={form.inspection_date}
+            onChange={(v) => setF("inspection_date", v)}
+          />
+        </div>
+        <div>
+          <FieldLabel>Tanggal Produksi *</FieldLabel>
+          <TextInput
+            type="date"
+            value={form.production_date}
+            onChange={(v) => setF("production_date", v)}
+          />
+        </div>
       </div>
 
       <SectionHeader icon="🔎">Jenis Defect</SectionHeader>
-      <div className="qc-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
+      <div
+        className="qc-grid-2"
+        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}
+      >
         <div>
           <FieldLabel>Kategori Defect</FieldLabel>
-          <div onClick={() => setPickerOpen(true)} style={{ 
-            background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.r, padding: "9px 12px", 
-            fontSize: 13.5, color: form.defect_cat ? T.text : T.muted, cursor: "pointer",
-            display: "flex", justifyContent: "space-between", alignItems: "center"
-          }}>
-            {DEFECT_CATS.find(d => d.v === form.defect_cat)?.l || "— Pilih Kategori —"}
+          <div
+            onClick={() => setPickerOpen(true)}
+            style={{
+              background: T.bg,
+              border: `1px solid ${T.border}`,
+              borderRadius: T.r,
+              padding: "9px 12px",
+              fontSize: 13.5,
+              color: form.defect_cat ? T.text : T.muted,
+              cursor: "pointer",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+            }}
+          >
+            {DEFECT_CATS.find((d) => d.v === form.defect_cat)?.l ||
+              "— Pilih Kategori —"}
             <span style={{ fontSize: 10 }}>▼</span>
           </div>
-          <DefectPicker open={pickerOpen} onClose={() => setPickerOpen(false)} value={form.defect_cat} onSelect={v => setF("defect_cat", v)} />
         </div>
-        <div><FieldLabel>Lokasi Defect</FieldLabel><TextInput value={form.defect_loc} onChange={v => setF("defect_loc", v)} placeholder="Top panel, Door frame…" /></div>
-        <div><FieldLabel>Stasiun *</FieldLabel>
-          <SelectInput value={form.station} onChange={v => setF("station", v)}>
+        <div>
+          <FieldLabel>Lokasi Defect</FieldLabel>
+          <TextInput
+            value={form.defect_loc}
+            onChange={(v) => setF("defect_loc", v)}
+            placeholder="Top panel, Door frame…"
+          />
+        </div>
+        <div>
+          <FieldLabel>Stasiun *</FieldLabel>
+          <SelectInput
+            value={form.station}
+            onChange={(v) => setF("station", v)}
+          >
             <option value="">— Pilih Stasiun —</option>
             <option value="Repair">🔧 Repair</option>
             <option value="QA">🔬 QA</option>
             <option value="Assembly">⚙️ Assembly</option>
           </SelectInput>
         </div>
-        <div><FieldLabel>Overall Status *</FieldLabel>
-          <SelectInput value={form.overall_status} onChange={v => setF("overall_status", v)}>
+        <div>
+          <FieldLabel>Overall Status *</FieldLabel>
+          <SelectInput
+            value={form.overall_status}
+            onChange={(v) => setF("overall_status", v)}
+          >
             <option value="pass">✅ PASS</option>
             <option value="fail">❌ FAIL</option>
           </SelectInput>
@@ -553,9 +1663,11 @@ export const ReportFormOrganism = ({ open, onClose, editReport, onSave, showToas
       </div>
 
       <SectionHeader icon="📝">Catatan</SectionHeader>
-      <TextareaInput value={form.notes} onChange={v => setF("notes", v)} placeholder="Catatan tambahan inspeksi…" />
-
-
+      <TextareaInput
+        value={form.notes}
+        onChange={(v) => setF("notes", v)}
+        placeholder="Catatan tambahan inspeksi…"
+      />
     </ModalShell>
   );
 };
@@ -563,53 +1675,204 @@ export const ReportFormOrganism = ({ open, onClose, editReport, onSave, showToas
 /** DetailModal — read-only report detail */
 export const DetailModal = ({ open, onClose, report, canEdit, onEdit }) => {
   if (!report) return null;
-  const rate     = report.defect_rate || 0;
-  const passRate = report.qty_inspected ? (report.qty_pass / report.qty_inspected * 100).toFixed(1) : 0;
+  const rate = report.defect_rate || 0;
+  const passRate = report.qty_inspected
+    ? ((report.qty_pass / report.qty_inspected) * 100).toFixed(1)
+    : 0;
   return (
-    <ModalShell open={open} onClose={onClose} title={genNo(report.id, report.created_at)} subtitle={`${report.batch_no} · ${(report.inspection_date || "").substring(0, 16)}`}
+    <ModalShell
+      open={open}
+      onClose={onClose}
+      title={genNo(report.id, report.created_at)}
+      subtitle={`${report.batch_no} · ${(report.inspection_date || "").substring(0, 16)}`}
       maxWidth={880}
       headerExtra={<StatusBadge status={report.overall_status} />}
-      footer={<><Btn variant="ghost" onClick={onClose}>Tutup</Btn>{canEdit && <Btn variant="yellow_outline" onClick={() => { onClose(); onEdit(report.id); }}>✏️ Edit</Btn>}</>}>
-
+      footer={
+        <>
+          <Btn variant="ghost" onClick={onClose}>
+            Tutup
+          </Btn>
+          {canEdit && (
+            <Btn
+              variant="yellow_outline"
+              onClick={() => {
+                onClose();
+                onEdit(report.id);
+              }}
+            >
+              ✏️ Edit
+            </Btn>
+          )}
+        </>
+      }
+    >
       {/* Info grid */}
-      <div className="qc-grid-3" style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 10, marginBottom: 16 }}>
-        {[["Model",report.model],["Warna",<ColorTag color={report.color} />],["Tgl Produksi",report.production_date],["Tgl Inspeksi",(report.inspection_date||"").substring(0,16)]
+      <div
+        className="qc-grid-3"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3,1fr)",
+          gap: 10,
+          marginBottom: 16,
+        }}
+      >
+        {[
+          ["Model", report.model],
+          ["Warna", <ColorTag color={report.color} />],
+          ["Tgl Produksi", report.production_date],
+          ["Tgl Inspeksi", (report.inspection_date || "").substring(0, 16)],
         ].map(([l, v]) => (
-          <div key={l} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.r, padding: "11px 14px" }}>
-            <div style={{ fontSize: 10, color: T.muted, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 4 }}>{l}</div>
+          <div
+            key={l}
+            style={{
+              background: T.bg,
+              border: `1px solid ${T.border}`,
+              borderRadius: T.r,
+              padding: "11px 14px",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 10,
+                color: T.muted,
+                textTransform: "uppercase",
+                letterSpacing: "1px",
+                marginBottom: 4,
+              }}
+            >
+              {l}
+            </div>
             <div style={{ fontWeight: 700, fontSize: 13 }}>{v}</div>
           </div>
         ))}
       </div>
 
       {/* Qty KPIs */}
-      <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))", gap: 8, marginBottom: 16 }}>
-        {[["Barang Masuk",report.qty_burning_in||"-",T.blue],["Produksi",report.qty_produced,T.text],
-          ["Pass",report.qty_pass,T.green],["Fail",report.qty_fail,T.red],["Rework",report.qty_rework,T.yellow]
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))",
+          gap: 8,
+          marginBottom: 16,
+        }}
+      >
+        {[
+          ["Barang Masuk", report.qty_burning_in || "-", T.blue],
+          ["Produksi", report.qty_produced, T.text],
+          ["Pass", report.qty_pass, T.green],
+          ["Fail", report.qty_fail, T.red],
+          ["Rework", report.qty_rework, T.yellow],
         ].map(([l, v, c]) => (
-          <div key={l} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.r, padding: 10, textAlign: "center" }}>
-            <div style={{ fontSize: 9.5, color: T.muted, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 4 }}>{l}</div>
-            <div style={{ fontSize: 20, fontWeight: 800, fontFamily: T.mono, color: c }}>{v}</div>
+          <div
+            key={l}
+            style={{
+              background: T.bg,
+              border: `1px solid ${T.border}`,
+              borderRadius: T.r,
+              padding: 10,
+              textAlign: "center",
+            }}
+          >
+            <div
+              style={{
+                fontSize: 9.5,
+                color: T.muted,
+                textTransform: "uppercase",
+                letterSpacing: "1px",
+                marginBottom: 4,
+              }}
+            >
+              {l}
+            </div>
+            <div
+              style={{
+                fontSize: 20,
+                fontWeight: 800,
+                fontFamily: T.mono,
+                color: c,
+              }}
+            >
+              {v}
+            </div>
           </div>
         ))}
       </div>
 
       {/* Pass Rate bar */}
-      <div style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.r, padding: "12px 14px", marginBottom: 16 }}>
-        <div style={{ display: "flex", justifyContent: "space-between", fontSize: 12, marginBottom: 7 }}>
+      <div
+        style={{
+          background: T.bg,
+          border: `1px solid ${T.border}`,
+          borderRadius: T.r,
+          padding: "12px 14px",
+          marginBottom: 16,
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            fontSize: 12,
+            marginBottom: 7,
+          }}
+        >
           <span style={{ color: T.muted }}>Pass Rate</span>
-          <span style={{ fontWeight: 700, fontFamily: T.mono, color: drColor(rate) }}>{passRate}% <span style={{ color: T.muted }}>(Defect: {rate}%)</span></span>
+          <span
+            style={{
+              fontWeight: 700,
+              fontFamily: T.mono,
+              color: drColor(rate),
+            }}
+          >
+            {passRate}%{" "}
+            <span style={{ color: T.muted }}>(Defect: {rate}%)</span>
+          </span>
         </div>
-        <ProgressBar value={Number(passRate)} color={report.overall_status === "pass" ? T.green : T.red} />
+        <ProgressBar
+          value={Number(passRate)}
+          color={report.overall_status === "pass" ? T.green : T.red}
+        />
       </div>
 
       {/* Defect info */}
       {report.defect_cat && (
-        <div className="qc-grid-3" style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: 10, marginBottom: 16 }}>
-          {[["Jenis Defect",report.defect_cat],["Lokasi",report.defect_loc||"–"],["Stasiun",report.station||"–"]].map(([l, v]) => (
-            <div key={l} style={{ background: T.redL, border: "1px solid rgba(248,81,73,.15)", borderRadius: T.r, padding: "11px 14px" }}>
-              <div style={{ fontSize: 10, color: T.red, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 4 }}>{l}</div>
-              <div style={{ fontWeight: 700, fontSize: 13, color: T.red }}>{v}</div>
+        <div
+          className="qc-grid-3"
+          style={{
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr 1fr",
+            gap: 10,
+            marginBottom: 16,
+          }}
+        >
+          {[
+            ["Jenis Defect", report.defect_cat],
+            ["Lokasi", report.defect_loc || "–"],
+            ["Stasiun", report.station || "–"],
+          ].map(([l, v]) => (
+            <div
+              key={l}
+              style={{
+                background: T.redL,
+                border: "1px solid rgba(248,81,73,.15)",
+                borderRadius: T.r,
+                padding: "11px 14px",
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 10,
+                  color: T.red,
+                  textTransform: "uppercase",
+                  letterSpacing: "1px",
+                  marginBottom: 4,
+                }}
+              >
+                {l}
+              </div>
+              <div style={{ fontWeight: 700, fontSize: 13, color: T.red }}>
+                {v}
+              </div>
             </div>
           ))}
         </div>
@@ -618,23 +1881,80 @@ export const DetailModal = ({ open, onClose, report, canEdit, onEdit }) => {
       {/* Serial Numbers */}
       {(report.serial_numbers || []).length > 0 && (
         <>
-          <div style={{ fontSize: 10.5, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: "1.2px", marginBottom: 8 }}>Serial Number Reject ({report.serial_numbers.length})</div>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 6, marginBottom: 16 }}>
-            {report.serial_numbers.map(sn => <SNChip key={sn} sn={sn} />)}
+          <div
+            style={{
+              fontSize: 10.5,
+              fontWeight: 700,
+              color: T.muted,
+              textTransform: "uppercase",
+              letterSpacing: "1.2px",
+              marginBottom: 8,
+            }}
+          >
+            Serial Number Reject ({report.serial_numbers.length})
+          </div>
+          <div
+            style={{
+              display: "flex",
+              flexWrap: "wrap",
+              gap: 6,
+              marginBottom: 16,
+            }}
+          >
+            {report.serial_numbers.map((sn) => (
+              <SNChip key={sn} sn={sn} />
+            ))}
           </div>
         </>
       )}
 
       {/* Checkpoints */}
-      <div style={{ fontSize: 10.5, fontWeight: 700, color: T.muted, textTransform: "uppercase", letterSpacing: "1.2px", marginBottom: 8 }}>Checkpoint QC</div>
-      <div style={{ border: `1px solid ${T.border}`, borderRadius: T.r2, overflow: "hidden", marginBottom: 16 }}>
-        {(report.checkpoints || mkCp()).map((cp, i) => <CheckpointRow key={i} cp={cp} index={i} readOnly />)}
+      <div
+        style={{
+          fontSize: 10.5,
+          fontWeight: 700,
+          color: T.muted,
+          textTransform: "uppercase",
+          letterSpacing: "1.2px",
+          marginBottom: 8,
+        }}
+      >
+        Checkpoint QC
+      </div>
+      <div
+        style={{
+          border: `1px solid ${T.border}`,
+          borderRadius: T.r2,
+          overflow: "hidden",
+          marginBottom: 16,
+        }}
+      >
+        {(report.checkpoints || mkCp()).map((cp, i) => (
+          <CheckpointRow key={i} cp={cp} index={i} readOnly />
+        ))}
       </div>
 
       {/* Notes */}
       {report.notes && (
-        <div style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: T.r, padding: "12px 14px" }}>
-          <div style={{ fontSize: 10, color: T.muted, textTransform: "uppercase", letterSpacing: "1px", marginBottom: 4 }}>Catatan</div>
+        <div
+          style={{
+            background: T.bg,
+            border: `1px solid ${T.border}`,
+            borderRadius: T.r,
+            padding: "12px 14px",
+          }}
+        >
+          <div
+            style={{
+              fontSize: 10,
+              color: T.muted,
+              textTransform: "uppercase",
+              letterSpacing: "1px",
+              marginBottom: 4,
+            }}
+          >
+            Catatan
+          </div>
           <div style={{ fontSize: 13 }}>{report.notes}</div>
         </div>
       )}
@@ -643,82 +1963,253 @@ export const DetailModal = ({ open, onClose, report, canEdit, onEdit }) => {
 };
 
 /** UserFormOrganism — create / edit user modal */
-export const UserFormOrganism = ({ open, onClose, editUser, onSave, users, showToast }) => {
-  const [form, setForm] = useState({ name: "", username: "", role: "operator", active: "1", password: "", password2: "" });
-  const setF = (k, v) => setForm(f => ({ ...f, [k]: v }));
+export const UserFormOrganism = ({
+  open,
+  onClose,
+  editUser,
+  onSave,
+  users,
+  showToast,
+}) => {
+  const [form, setForm] = useState({
+    name: "",
+    username: "",
+    role: "operator",
+    active: "1",
+    password: "",
+    password2: "",
+  });
+  const setF = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
   useEffect(() => {
     if (!open) return;
     editUser
-      ? setForm({ name: editUser.name, username: editUser.username, role: editUser.role, active: editUser.active ? "1" : "0", password: "", password2: "" })
-      : setForm({ name: "", username: "", role: "operator", active: "1", password: "", password2: "" });
+      ? setForm({
+          name: editUser.name,
+          username: editUser.username,
+          role: editUser.role,
+          active: editUser.active ? "1" : "0",
+          password: "",
+          password2: "",
+        })
+      : setForm({
+          name: "",
+          username: "",
+          role: "operator",
+          active: "1",
+          password: "",
+          password2: "",
+        });
   }, [open, editUser]);
 
   const handleSave = () => {
-    if (!form.name || !form.username) { showToast("Nama dan Username wajib diisi!", "err"); return; }
-    if (!editUser && !form.password)  { showToast("Password wajib untuk user baru!", "err"); return; }
-    if (form.password && form.password !== form.password2) { showToast("Konfirmasi password tidak cocok!", "err"); return; }
-    if (form.password && (form.password.length < 8 || !/[a-zA-Z]/.test(form.password) || !/[0-9]/.test(form.password))) { showToast("Password min 8 char dgn huruf & angka!", "err"); return; }
-    const dup = users.find(u => u.username === form.username.toLowerCase() && u.id !== editUser?.id);
-    if (dup) { showToast("Username sudah digunakan!", "err"); return; }
+    if (!form.name || !form.username) {
+      showToast("Nama dan Username wajib diisi!", "err");
+      return;
+    }
+    if (!editUser && !form.password) {
+      showToast("Password wajib untuk user baru!", "err");
+      return;
+    }
+    if (form.password && form.password !== form.password2) {
+      showToast("Konfirmasi password tidak cocok!", "err");
+      return;
+    }
+    if (
+      form.password &&
+      (form.password.length < 8 ||
+        !/[a-zA-Z]/.test(form.password) ||
+        !/[0-9]/.test(form.password))
+    ) {
+      showToast("Password min 8 char dgn huruf & angka!", "err");
+      return;
+    }
+    const dup = users.find(
+      (u) =>
+        u.username === form.username.toLowerCase() && u.id !== editUser?.id,
+    );
+    if (dup) {
+      showToast("Username sudah digunakan!", "err");
+      return;
+    }
     onSave({
       ...(editUser || {}),
-      name: form.name, username: form.username.toLowerCase(),
-      role: form.role, active: form.active === "1",
+      name: form.name,
+      username: form.username.toLowerCase(),
+      role: form.role,
+      active: form.active === "1",
       password: form.password || editUser?.password || "",
       created_at: editUser?.created_at || new Date().toISOString(),
     });
   };
 
   return (
-    <ModalShell open={open} onClose={onClose} title={editUser ? "✏️ Edit User" : "+ Tambah User Baru"} maxWidth={480}
-      footer={<><Btn variant="ghost" onClick={onClose}>Batal</Btn><Btn variant="success" onClick={handleSave}>💾 Simpan</Btn></>}>
+    <ModalShell
+      open={open}
+      onClose={onClose}
+      title={editUser ? "✏️ Edit User" : "+ Tambah User Baru"}
+      maxWidth={480}
+      footer={
+        <>
+          <Btn variant="ghost" onClick={onClose}>
+            Batal
+          </Btn>
+          <Btn variant="success" onClick={handleSave}>
+            💾 Simpan
+          </Btn>
+        </>
+      }
+    >
       <SectionHeader first>Informasi Akun</SectionHeader>
-      <div className="qc-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-        <div><FieldLabel>Nama Lengkap *</FieldLabel><TextInput value={form.name} onChange={v => setF("name", v)} placeholder="Nama lengkap…" /></div>
-        <div><FieldLabel>Username *</FieldLabel><TextInput value={form.username} onChange={v => setF("username", v)} placeholder="tanpa spasi…" /></div>
-        <div><FieldLabel>Role *</FieldLabel>
-          <SelectInput value={form.role} onChange={v => setF("role", v)}>
+      <div
+        className="qc-grid-2"
+        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}
+      >
+        <div>
+          <FieldLabel>Nama Lengkap *</FieldLabel>
+          <TextInput
+            value={form.name}
+            onChange={(v) => setF("name", v)}
+            placeholder="Nama lengkap…"
+          />
+        </div>
+        <div>
+          <FieldLabel>Username *</FieldLabel>
+          <TextInput
+            value={form.username}
+            onChange={(v) => setF("username", v)}
+            placeholder="tanpa spasi…"
+          />
+        </div>
+        <div>
+          <FieldLabel>Role *</FieldLabel>
+          <SelectInput value={form.role} onChange={(v) => setF("role", v)}>
             <option value="operator">Operator</option>
             <option value="viewer">Viewer</option>
             <option value="admin">Admin</option>
           </SelectInput>
         </div>
-        <div><FieldLabel>Status</FieldLabel>
-          <SelectInput value={form.active} onChange={v => setF("active", v)}>
+        <div>
+          <FieldLabel>Status</FieldLabel>
+          <SelectInput value={form.active} onChange={(v) => setF("active", v)}>
             <option value="1">✅ Aktif</option>
             <option value="0">⛔ Nonaktif</option>
           </SelectInput>
         </div>
       </div>
-      <SectionHeader>{editUser ? "Ganti Password (kosongkan jika tidak berubah)" : "Password"}</SectionHeader>
-      <div className="qc-grid-2" style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}>
-        <div><FieldLabel>Password *</FieldLabel><TextInput type="password" value={form.password} onChange={v => setF("password", v)} placeholder="Min 8 char huruf & angka…" /></div>
-        <div><FieldLabel>Konfirmasi *</FieldLabel><TextInput type="password" value={form.password2} onChange={v => setF("password2", v)} placeholder="Ulangi password…" /></div>
+      <SectionHeader>
+        {editUser
+          ? "Ganti Password (kosongkan jika tidak berubah)"
+          : "Password"}
+      </SectionHeader>
+      <div
+        className="qc-grid-2"
+        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}
+      >
+        <div>
+          <FieldLabel>Password *</FieldLabel>
+          <TextInput
+            type="password"
+            value={form.password}
+            onChange={(v) => setF("password", v)}
+            placeholder="Min 8 char huruf & angka…"
+          />
+        </div>
+        <div>
+          <FieldLabel>Konfirmasi *</FieldLabel>
+          <TextInput
+            type="password"
+            value={form.password2}
+            onChange={(v) => setF("password2", v)}
+            placeholder="Ulangi password…"
+          />
+        </div>
       </div>
-      <div style={{ background: T.blueL, border: "1px solid rgba(47,129,247,.2)", borderRadius: T.r, padding: "10px 14px", fontSize: 12, color: T.blue, marginTop: 8 }}>
-        ℹ️ <strong>Admin</strong> = akses penuh + kelola user · <strong>Operator</strong> = buat & edit laporan · <strong>Viewer</strong> = hanya lihat
+      <div
+        style={{
+          background: T.blueL,
+          border: "1px solid rgba(47,129,247,.2)",
+          borderRadius: T.r,
+          padding: "10px 14px",
+          fontSize: 12,
+          color: T.blue,
+          marginTop: 8,
+        }}
+      >
+        ℹ️ <strong>Admin</strong> = akses penuh + kelola user ·{" "}
+        <strong>Operator</strong> = buat & edit laporan ·{" "}
+        <strong>Viewer</strong> = hanya lihat
       </div>
     </ModalShell>
   );
 };
 
 /** ChangePwOrganism — change password for target user */
-export const ChangePwOrganism = ({ open, onClose, targetUser, onSave, showToast }) => {
-  const [pw,   setPw]   = useState("");
+export const ChangePwOrganism = ({
+  open,
+  onClose,
+  targetUser,
+  onSave,
+  showToast,
+}) => {
+  const [pw, setPw] = useState("");
   const [conf, setConf] = useState("");
-  useEffect(() => { if (open) { setPw(""); setConf(""); } }, [open]);
+  useEffect(() => {
+    if (open) {
+      setPw("");
+      setConf("");
+    }
+  }, [open]);
   const handle = () => {
-    if (!pw || pw.length < 8 || !/[a-zA-Z]/.test(pw) || !/[0-9]/.test(pw)) { showToast("Password min 8 char dgn huruf & angka!", "err"); return; }
-    if (pw !== conf) { showToast("Konfirmasi tidak cocok!", "err"); return; }
+    if (!pw || pw.length < 8 || !/[a-zA-Z]/.test(pw) || !/[0-9]/.test(pw)) {
+      showToast("Password min 8 char dgn huruf & angka!", "err");
+      return;
+    }
+    if (pw !== conf) {
+      showToast("Konfirmasi tidak cocok!", "err");
+      return;
+    }
     onSave(pw);
   };
   return (
-    <ModalShell open={open} onClose={onClose} title="🔑 Ganti Password" maxWidth={480}
-      footer={<><Btn variant="ghost" onClick={onClose}>Batal</Btn><Btn variant="primary" onClick={handle}>🔑 Simpan Password</Btn></>}>
-      <div style={{ fontSize: 13, color: T.muted, marginBottom: 16 }}>Mengganti password untuk: <strong style={{ color: T.text }}>{targetUser?.name}</strong></div>
-      <div style={{ marginBottom: 12 }}><FieldLabel>Password Baru *</FieldLabel><TextInput type="password" value={pw} onChange={setPw} placeholder="Min 8 char huruf & angka…" /></div>
-      <div><FieldLabel>Konfirmasi *</FieldLabel><TextInput type="password" value={conf} onChange={setConf} placeholder="Ulangi password baru…" /></div>
+    <ModalShell
+      open={open}
+      onClose={onClose}
+      title="🔑 Ganti Password"
+      maxWidth={480}
+      footer={
+        <>
+          <Btn variant="ghost" onClick={onClose}>
+            Batal
+          </Btn>
+          <Btn variant="primary" onClick={handle}>
+            🔑 Simpan Password
+          </Btn>
+        </>
+      }
+    >
+      <div style={{ fontSize: 13, color: T.muted, marginBottom: 16 }}>
+        Mengganti password untuk:{" "}
+        <strong style={{ color: T.text }}>{targetUser?.name}</strong>
+      </div>
+      <div style={{ marginBottom: 12 }}>
+        <FieldLabel>Password Baru *</FieldLabel>
+        <TextInput
+          type="password"
+          value={pw}
+          onChange={setPw}
+          placeholder="Min 8 char huruf & angka…"
+        />
+      </div>
+      <div>
+        <FieldLabel>Konfirmasi *</FieldLabel>
+        <TextInput
+          type="password"
+          value={conf}
+          onChange={setConf}
+          placeholder="Ulangi password baru…"
+        />
+      </div>
     </ModalShell>
   );
 };

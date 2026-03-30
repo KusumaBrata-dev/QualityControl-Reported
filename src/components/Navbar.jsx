@@ -44,7 +44,7 @@ const Navbar = () => {
           </div>
         </div>
         <div className="navbar-center">
-          <a className="btn btn-ghost text-xl">Introduction</a>
+          <a className="btn btn-ghost text-xl">Zyrex - QC</a>
         </div>
         <div className="navbar-end">
           <input
