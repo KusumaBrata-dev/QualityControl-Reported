@@ -221,11 +221,15 @@ export const ReportsTemplate = ({
     return true;
   });
 
+  const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
+    .toISOString()
+    .slice(0, 10);
   const reset = () => {
     setSearch("");
     setModel("");
     setColor("");
     setStatus("");
+    onDateChange(todayStr);
   };
 
   return (
@@ -285,18 +289,7 @@ export const ReportsTemplate = ({
           <FilterField label="Tanggal">
             <TextInput type="date" value={date} onChange={onDateChange} />
           </FilterField>
-          <Btn
-            variant="ghost"
-            size="sm"
-            onClick={() => {
-              reset();
-              onDateChange(
-                new Date(Date.now() - new Date().getTimezoneOffset() * 60000)
-                  .toISOString()
-                  .slice(0, 10),
-              );
-            }}
-          >
+          <Btn variant="ghost" size="sm" onClick={reset}>
             Reset
           </Btn>
         </div>

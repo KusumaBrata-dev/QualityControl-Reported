@@ -58,8 +58,8 @@ export const mkCp = (result = "fail") =>
 // In a real production system, consider implementing a proper backend auth (e.g., JWT).
 export const SEED_USERS = [
   { id:1, name:"Admin QC",       username:"admin",    role:"admin",    password:"admin123", active:true,  created_at:"2025-01-01T00:00:00Z" },
-  { id:2, name:"Ahmad Operator", username:"ahmad",    role:"operator", password:"operator", active:true,  created_at:"2025-01-02T00:00:00Z" },
-  { id:3, name:"Viewer Only",    username:"viewer",   role:"viewer",   password:"viewer",   active:true,  created_at:"2025-01-03T00:00:00Z" },
+  { id:2, name:"Ahmad Operator", username:"ahmad",    role:"operator", password:"Ahmad123op", active:true,  created_at:"2025-01-02T00:00:00Z" },
+  { id:3, name:"Viewer Only",    username:"viewer",   role:"viewer",   password:"Viewer123x",   active:true,  created_at:"2025-01-03T00:00:00Z" },
 ];
 
 export const SEED_REPORTS = [

@@ -446,11 +446,20 @@ export const DashboardCharts = ({ reports, selectedDate, burningInQty }) => {
     burningInQty > 0
       ? [
           { name: "Reject", value: failQty },
+          { name: "Pass", value: passQty },
           { name: "Belum Diperiksa", value: belumDiperiksa },
-        ]
-      : [{ name: "Reject", value: failQty }];
+        ].filter(d => d.value > 0)
+      : [
+          { name: "Reject", value: failQty },
+          { name: "Pass", value: passQty },
+        ].filter(d => d.value > 0);
 
-  const PIE_COLORS = burningInQty > 0 ? [T.red, T.muted2] : [T.red];
+  const PIE_COLORS_MAP = {
+    "Reject": T.red,
+    "Pass": T.green,
+    "Belum Diperiksa": T.muted2,
+  };
+  const PIE_COLORS = pieData.map(d => PIE_COLORS_MAP[d.name]);
 
   const barData = Object.entries(PRODUCTS).map(([id, prod]) => {
     const rs = filtered.filter((r) => r.product_id === Number(id));
@@ -732,7 +741,7 @@ export const ReportTable = ({
   const [page, setPage] = useState(1);
   useEffect(() => {
     setPage(1);
-  }, [data.length]);
+  }, [data]);
 
   if (!data.length)
     return (
@@ -1085,7 +1094,7 @@ export const MatrixOrganism = ({ reports }) => {
                       className="qc-kpi-grid"
                       style={{
                         display: "grid",
-                        gridTemplateColumns: "repeat(4,1fr)",
+                        gridTemplateColumns: "repeat(3,1fr)",
                         gap: 8,
                         marginBottom: 10,
                       }}
@@ -1378,6 +1387,7 @@ export const ReportFormOrganism = ({
       inspection_date: localISO.slice(0, 16),
       qty_burning_in: "",
       qty_produced: "",
+      qty_inspected: "",
       qty_pass: "",
       qty_fail: "",
       qty_rework: "",
@@ -1407,11 +1417,11 @@ export const ReportFormOrganism = ({
         production_date: r.production_date,
         inspection_date: r.inspection_date,
         qty_burning_in: r.qty_burning_in || "",
-        qty_produced: r.qty_produced,
-        qty_inspected: r.qty_inspected,
-        qty_pass: r.qty_pass,
-        qty_fail: r.qty_fail,
-        qty_rework: r.qty_rework,
+        qty_produced: r.qty_produced || "",
+        qty_inspected: r.qty_inspected || "",
+        qty_pass: r.qty_pass || "",
+        qty_fail: r.qty_fail || "",
+        qty_rework: r.qty_rework || "",
         defect_cat: r.defect_cat || "",
         defect_loc: r.defect_loc || "",
         station: r.station || "",
@@ -1471,9 +1481,7 @@ export const ReportFormOrganism = ({
     try {
       const prod = PRODUCTS[form.product_id];
       const qty_fail = snList.length;
-      const qty_burning_in = Number(form.qty_burning_in) || 0;
-      const qty_produced = Number(form.qty_produced) || 0;
-      const qty_inspected = qty_burning_in || qty_produced || qty_fail;
+      const qty_inspected = Number(form.qty_inspected) || Number(form.qty_burning_in) || Number(form.qty_produced) || qty_fail;
       const qty_pass = Math.max(0, qty_inspected - qty_fail);
       const defect_rate = qty_inspected > 0 ? +((qty_fail / qty_inspected) * 100).toFixed(2) : 0;
 
@@ -1727,6 +1735,45 @@ export const ReportFormOrganism = ({
             type="date"
             value={form.production_date}
             onChange={(v) => setF("production_date", v)}
+          />
+        </div>
+      </div>
+
+      <SectionHeader icon="🔢">Kuantitas Unit</SectionHeader>
+      <div
+        className="qc-grid-2"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(3, 1fr)",
+          gap: 14,
+          marginBottom: 20,
+        }}
+      >
+        <div>
+          <FieldLabel>Barang Masuk</FieldLabel>
+          <TextInput
+            type="number"
+            value={form.qty_burning_in}
+            onChange={(v) => setF("qty_burning_in", v)}
+            placeholder="0"
+          />
+        </div>
+        <div>
+          <FieldLabel>Produksi</FieldLabel>
+          <TextInput
+            type="number"
+            value={form.qty_produced}
+            onChange={(v) => setF("qty_produced", v)}
+            placeholder="0"
+          />
+        </div>
+        <div>
+          <FieldLabel>Jumlah Diperiksa *</FieldLabel>
+          <TextInput
+            type="number"
+            value={form.qty_inspected}
+            onChange={(v) => setF("qty_inspected", v)}
+            placeholder="0"
           />
         </div>
       </div>

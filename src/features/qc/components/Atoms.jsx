@@ -5,6 +5,7 @@ import { T, COLOR_HEX, COLOR_BGL, ROLE_GRAD } from "../qcConstants";
 export const Badge = ({ type = "viewer", style, children }) => {
   const map = {
     fail: { bg: T.redL, color: T.red, border: "rgba(248,81,73,.2)" },
+    pass: { bg: T.greenL, color: T.green, border: "transparent" },
     repair: {
       bg: "rgba(240,136,62,.1)",
       color: T.orange,
@@ -378,7 +379,8 @@ export const SectionHeader = ({ icon, children, first = false }) => (
 
 /** StatusBadge — pass/fail */
 export const StatusBadge = ({ status }) => {
-  if (status === "pass") return <Badge type="viewer">✓ PASS</Badge>;
+  if (status === "pass" || status === "approved")
+    return <Badge type="pass">✓ PASS</Badge>;
   return <Badge type="fail">✕ REJECT</Badge>;
 };
 

@@ -30,8 +30,21 @@ export default function QCReportSystemMain() {
   const todayStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
   const [selectedDate, setSelectedDate] = useState(todayStr);
 
-  const [tab, setTab] = useState(() => localStorage.getItem("qc_active_tab") || "dashboard");
+  const [tab, setTab] = useState(() => {
+    const saved = localStorage.getItem("qc_active_tab") || "dashboard";
+    // Non-admins cannot start on the users tab even via localStorage
+    const savedUser = (() => { try { return JSON.parse(localStorage.getItem("qc_auth_user")); } catch { return null; } })();
+    if (saved === "users" && savedUser?.role !== "admin") return "dashboard";
+    return saved;
+  });
   useEffect(() => { localStorage.setItem("qc_active_tab", tab); }, [tab]);
+
+  // Route guard: if somehow a non-admin is on the users tab, redirect to dashboard
+  useEffect(() => {
+    if (tab === "users" && currentUser && currentUser.role !== "admin") {
+      setTab("dashboard");
+    }
+  }, [tab, currentUser]);
 
   const [toastState,  setToastState]  = useState(null);
   const toastTimer = useRef(null);
@@ -46,27 +59,43 @@ export default function QCReportSystemMain() {
   const [pwOpen,       setPwOpen]       = useState(false);
   const [pwTarget,     setPwTarget]     = useState(null);
   const [confirmAct,   setConfirmAct]   = useState(null);
-  
+  const [saving, setSaving] = useState(false);
 
 
   useEffect(() => {
-    const unsubReports = onSnapshot(collection(db, "reports"), snap => {
-      setReports(snap.docs.map(d => {
-        const idNum = Number(d.id);
-        return { ...d.data(), id: isNaN(idNum) ? d.id : idNum };
-      }));
-      setLoading(false);
-    });
+    const unsubReports = onSnapshot(
+      collection(db, "reports"),
+      snap => {
+        setReports(snap.docs.map(d => {
+          const idNum = Number(d.id);
+          return { ...d.data(), id: isNaN(idNum) ? d.id : idNum };
+        }));
+        setLoading(false);
+      },
+      err => {
+        console.error("Failed load reports:", err);
+        showToast("Database connection failed. Try refreshing.", "err");
+        setLoading(false);
+      }
+    );
 
-    const unsubUsers = onSnapshot(collection(db, "users"), snap => {
-      setUsers(snap.docs.map(d => ({ ...d.data(), id: Number(d.id) })));
-    });
+    const unsubUsers = onSnapshot(
+      collection(db, "users"),
+      snap => {
+        setUsers(snap.docs.map(d => ({ ...d.data(), id: Number(d.id) })));
+      },
+      err => console.error("Failed to load users:", err)
+    );
 
-    const unsubDaily = onSnapshot(collection(db, "daily_production"), snap => {
-      const data = {};
-      snap.docs.forEach(d => { data[d.id] = d.data().qty; });
-      setDailyProd(data);
-    });
+    const unsubDaily = onSnapshot(
+      collection(db, "daily_production"),
+      snap => {
+        const data = {};
+        snap.docs.forEach(d => { data[d.id] = d.data().qty; });
+        setDailyProd(data);
+      },
+      err => console.error("Failed to load daily_production:", err)
+    );
 
     return () => {
       unsubReports();
@@ -125,12 +154,13 @@ export default function QCReportSystemMain() {
     };
   }, []);
 
-  // Toast helper
+  // Toast helper — cleanup timer on unmount to prevent setState on unmounted component
   const showToast = useCallback((msg, type = "ok") => {
     setToastState({ msg, type });
     if (toastTimer.current) clearTimeout(toastTimer.current);
     toastTimer.current = setTimeout(() => setToastState(null), 3200);
   }, []);
+  useEffect(() => () => { if (toastTimer.current) clearTimeout(toastTimer.current); }, []);
 
   // Smart Alert Logic (Threshold > 5%)
   useEffect(() => {
@@ -169,8 +199,8 @@ export default function QCReportSystemMain() {
 
   // ── Auth ──────────────────────────────────────────
   const handleLogin  = user => { 
-    setCurrentUser(user); 
     const { password, ...safeUser } = user;
+    setCurrentUser(safeUser); 
     localStorage.setItem("qc_auth_user", JSON.stringify(safeUser));
     showToast(`👋 Selamat datang, ${user.name}!`); 
   };
@@ -233,6 +263,8 @@ export default function QCReportSystemMain() {
     }});
   };
   const handleSaveReport = async data => {
+    if (saving) return;
+    setSaving(true);
     const isEdit = !!data.id;
     const id = isEdit ? data.id : Math.max(0, ...reports.map(r => Number(r.id) || 0)) + 1;
     
@@ -253,8 +285,11 @@ export default function QCReportSystemMain() {
       await setDoc(doc(db, "reports", String(id)), reportData, { merge: true });
       logAction(isEdit ? "UPDATE_REPORT" : "CREATE_REPORT", id);
       showToast(isEdit ? "✅ Laporan diupdate!" : "✅ Laporan tersimpan!");
+      setFormOpen(false);
     } catch { showToast("Gagal menyimpan laporan!", "err"); }
-    setFormOpen(false);
+    finally {
+      setSaving(false);
+    }
   };
 
   const handleApproveReport = async id => {
@@ -286,6 +321,8 @@ export default function QCReportSystemMain() {
     }});
   };
   const handleSaveUser = async data => {
+    if (saving) return;
+    setSaving(true);
     const isEdit = !!data.id;
     const id = isEdit ? data.id : Math.max(0, ...users.map(u => Number(u.id) || 0)) + 1;
     try {
@@ -297,16 +334,24 @@ export default function QCReportSystemMain() {
         localStorage.setItem("qc_auth_user", JSON.stringify(safe));
       }
       showToast(isEdit ? "✅ User diupdate!" : "✅ User ditambahkan!");
+      setUserFormOpen(false);
     } catch { showToast("Gagal menyimpan user!", "err"); }
-    setUserFormOpen(false);
+    finally {
+      setSaving(false);
+    }
   };
   const handleChangePw = (id, _name) => { setPwTarget(users.find(u => u.id === id) || null); setPwOpen(true); };
   const handleSavePw   = async pw => {
+    if (saving) return;
+    setSaving(true);
     try {
       await setDoc(doc(db, "users", String(pwTarget.id)), { password: pw }, { merge: true });
       setPwOpen(false);
       showToast("✅ Password berhasil diubah!");
     } catch { showToast("Gagal mengubah password!", "err"); }
+    finally {
+      setSaving(false);
+    }
   };
 
   const handleExportReports = (filteredData) => {
