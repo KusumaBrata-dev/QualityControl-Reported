@@ -143,11 +143,9 @@ export default function QCReportSystemMain() {
         }
       },
       (err) => {
-        console.error("Users load fail:", err);
-        showToast(
-          `Database Error: ${err.message || "Permission Denied"}`,
-          "err",
-        );
+        console.error("Critical Users load fail:", err);
+        const errMsg = `DB ERROR [${err.code}]: ${err.message}`;
+        showToast(errMsg, "err");
         setLoading(false);
       },
     );
