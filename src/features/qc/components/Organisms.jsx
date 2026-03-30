@@ -364,10 +364,10 @@ export const NavbarOrganism = ({
 /** DashboardKPIs — 4-card KPI grid + alert */
 export const DashboardKPIs = ({ reports, burningInQty }) => {
   const totFail = reports.reduce((a, r) => a + (Number(r.qty_fail) || 0), 0);
-  const totInsp =
-    reports.reduce((a, r) => a + (Number(r.qty_inspected) || 1), 0) || 1; // Fallback to 1 to avoid /0
+  const totPass = reports.reduce((a, r) => a + (Number(r.qty_pass) || 0), 0);
+  const totInsp = totPass + totFail;
 
-  // DR = Total Fail / Burning In (if provided). Else fallback to Total Fail / Total Inspected.
+  // DR = Total Fail / Barang Masuk (if provided). Else fallback to Total Fail / Total Inspected.
   const baseQty = burningInQty > 0 ? burningInQty : totInsp;
   const drRate = baseQty > 0 ? ((totFail / baseQty) * 100).toFixed(2) : "0.00";
 
@@ -966,7 +966,7 @@ export const MatrixOrganism = ({ reports }) => {
                       rs.reduce((a, r) => a + r.defect_rate, 0) / rs.length
                     ).toFixed(1)
                   : "0.0";
-                const tInsp = rs.reduce((a, r) => a + r.qty_inspected, 0);
+                const tInsp = rs.reduce((a, r) => a + (Number(r.qty_pass) || 0) + (Number(r.qty_fail) || 0), 0);
                 const passRate = rs.length
                   ? Math.round((p / rs.length) * 100)
                   : 0;
@@ -1307,7 +1307,6 @@ export const ReportFormOrganism = ({
       inspection_date: localISO.slice(0, 16),
       qty_burning_in: "",
       qty_produced: "",
-      qty_inspected: "",
       qty_pass: "",
       qty_fail: "",
       qty_rework: "",
@@ -1380,12 +1379,13 @@ export const ReportFormOrganism = ({
     }
     const prod = PRODUCTS[form.product_id];
     const qty_burning_in = Number(form.qty_burning_in) || 0;
-    const qty_inspected = Number(form.qty_inspected) || 0;
-    const qty_fail = snList.length;
-    const qty_pass = Math.max(0, qty_inspected - qty_fail);
+    const qty_pass = Number(form.qty_pass) || 0;
+    const qty_fail = Number(form.qty_fail) || 0;
+    const qty_inspected = qty_pass + qty_fail;
     const defect_rate = qty_inspected
       ? +((qty_fail / qty_inspected) * 100).toFixed(2)
       : 0;
+
     onSave({
       ...(editReport
         ? { id: editReport.id, created_at: editReport.created_at }
@@ -1494,60 +1494,36 @@ export const ReportFormOrganism = ({
         </div>
       </div>
 
-      <SectionHeader icon="🔎">Metrik Inspeksi</SectionHeader>
+      <SectionHeader icon="📊">Data Kuantitas</SectionHeader>
       <div
-        className="qc-grid-4"
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 14,
+          gridTemplateColumns: "repeat(5, 1fr)",
+          gap: 12,
           marginBottom: 20,
         }}
       >
-        <div>
-          <FieldLabel>Total Diperiksa *</FieldLabel>
-          <TextInput
-            type="number"
-            value={form.qty_inspected}
-            onChange={(v) => setF("qty_inspected", v)}
-            placeholder="0"
-          />
-        </div>
-        <div>
-          <FieldLabel>Unit Lulus (Pass)</FieldLabel>
-          <TextInput
-            type="number"
-            value={Math.max(
-              0,
-              (Number(form.qty_inspected) || 0) - snList.length,
-            )}
-            disabled
-            style={{ opacity: 0.7, background: T.surface2 }}
-          />
-        </div>
-        <div>
-          <FieldLabel>Unit Gagal (Fail)</FieldLabel>
-          <TextInput
-            type="number"
-            value={snList.length}
-            disabled
-            style={{
-              opacity: 0.7,
-              background: T.surface2,
-              color: T.red,
-              fontWeight: 700,
-            }}
-          />
-        </div>
-        <div>
-          <FieldLabel>Unit Rework</FieldLabel>
-          <TextInput
-            type="number"
-            value={form.qty_rework}
-            onChange={(v) => setF("qty_rework", v)}
-            placeholder="0"
-          />
-        </div>
+        {[
+          ["Barang Masuk", "qty_burning_in"],
+          ["Diproduksi", "qty_produced"],
+          ["Pass", "qty_pass"],
+          ["Fail / Reject", "qty_fail"],
+          ["Rework", "qty_rework"],
+        ].map(([lbl, key]) => (
+          <div key={key}>
+            <FieldLabel>{lbl}</FieldLabel>
+            <TextInput
+              type="number"
+              value={form[key]}
+              onChange={(v) => {
+                setF(key, v);
+                // Auto-sync qty_fail with snList if snList has items? 
+                // Actually, user wants to manually input qty_fail sometimes.
+              }}
+              placeholder="0"
+            />
+          </div>
+        ))}
       </div>
 
       <SectionHeader icon="📦">Informasi Produk & Batch</SectionHeader>
@@ -1676,8 +1652,8 @@ export const ReportFormOrganism = ({
 export const DetailModal = ({ open, onClose, report, canEdit, onEdit }) => {
   if (!report) return null;
   const rate = report.defect_rate || 0;
-  const passRate = report.qty_inspected
-    ? ((report.qty_pass / report.qty_inspected) * 100).toFixed(1)
+  const passRate = (report.qty_pass + report.qty_fail) > 0
+    ? ((report.qty_pass / (report.qty_pass + report.qty_fail)) * 100).toFixed(1)
     : 0;
   return (
     <ModalShell

@@ -81,7 +81,7 @@ export const ReportsTemplate = ({ reports, canEdit, onDetail, onEdit, onDelete, 
     <div>
       <div style={{ background: T.surface, border: `1px solid ${T.border}`, borderRadius: T.r2, padding: "16px 20px", marginBottom: 16 }}>
         <div className="qc-grid-auto" style={{ display: "grid", gridTemplateColumns: "2fr 1.2fr 1.2fr 1.2fr 1.2fr auto", gap: 10, alignItems: "end" }}>
-          <FilterField label="🔍 Cari"><TextInput value={search} onChange={setSearch} placeholder="Batch / Inspector / Report No…" /></FilterField>
+          <FilterField label="🔍 Cari"><TextInput value={search} onChange={setSearch} placeholder="Batch / Report No / SN…" /></FilterField>
           <FilterField label="Model">
             <SelectInput value={model} onChange={v => { setModel(v); setColor(""); }}>
               <option value="">Semua Model</option>
