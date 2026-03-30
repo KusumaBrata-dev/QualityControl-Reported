@@ -53,7 +53,7 @@ import {
 } from "./Molecules";
 
 /** LoginOrganism — full login screen */
-export const LoginOrganism = ({ users, onLogin }) => {
+export const LoginOrganism = ({ users, onLogin, dbStats }) => {
   const [uname, setUname] = useState("");
   const [pass, setPass] = useState("");
   const [error, setError] = useState("");
@@ -62,12 +62,17 @@ export const LoginOrganism = ({ users, onLogin }) => {
   const handle = () => {
     setError("");
     setLoading(true);
+    console.log("Login Attempt:", uname, pass);
+    console.log("Available Users:", users);
+
     if (!uname || !pass) {
       setError("⚠ Username dan password wajib diisi");
       setLoading(false);
       return;
     }
-    const user = users.find((u) => u.username === uname.toLowerCase());
+    const user = users.find(
+      (u) => u.username?.toLowerCase().trim() === uname.toLowerCase().trim()
+    );
     if (!user) {
       setError("❌ Username tidak ditemukan");
       setLoading(false);
@@ -78,7 +83,7 @@ export const LoginOrganism = ({ users, onLogin }) => {
       setLoading(false);
       return;
     }
-    if (user.password !== pass) {
+    if (user.password?.trim() !== pass.trim()) {
       setError("❌ Password salah");
       setPass("");
       setLoading(false);
@@ -740,7 +745,7 @@ export const ReportTable = ({
   const [page, setPage] = useState(1);
   useEffect(() => {
     setPage(1);
-  }, [data]);
+  }, [data.length]);
 
   if (!data.length)
     return (
@@ -812,7 +817,7 @@ export const ReportTable = ({
           </thead>
           <tbody>
             {currentData.map((r) => {
-              const rate = r.defect_rate || 0;
+              const rate = Number(r.defect_rate) || 0;
               const snCount = (r.serial_numbers || []).length;
               return (
                 <tr
@@ -1000,22 +1005,12 @@ export const ReportTable = ({
 
 /** MatrixOrganism — variant comparison grid + stacked bar */
 export const MatrixOrganism = ({ reports }) => {
-  const groups = [
-    {
-      model: "WM1091SK",
-      variants: [
-        { name: "Blue", pid: 1 },
-        { name: "Purple", pid: 2 },
-      ],
-    },
-    {
-      model: "WM891SK",
-      variants: [
-        { name: "Aqua", pid: 3 },
-        { name: "Pink", pid: 4 },
-      ],
-    },
-  ];
+  const grouped = Object.entries(PRODUCTS).reduce((acc, [id, p]) => {
+    if (!acc[p.model]) acc[p.model] = [];
+    acc[p.model].push({ name: p.color, pid: Number(id) });
+    return acc;
+  }, {});
+  const groups = Object.entries(grouped).map(([model, variants]) => ({ model, variants }));
   const stackedData = [1, 2, 3, 4].map((pid) => {
     const rs = reports.filter((r) => r.product_id === pid);
     const prod = PRODUCTS[pid];
@@ -1478,10 +1473,10 @@ export const ReportFormOrganism = ({
     
     setIsUploading(true);
     try {
-      const prod = PRODUCTS[form.product_id];
       const qty_fail = snList.length;
-      const qty_inspected = Number(form.qty_inspected) || Number(form.qty_burning_in) || Number(form.qty_produced) || qty_fail;
-      const qty_pass = Math.max(0, qty_inspected - qty_fail);
+      const qty_p = Number(form.qty_pass) || 0;
+      const qty_inspected = qty_p + qty_fail; // Red 1.4: Force qty_inspected = pass + fail
+      const qty_pass = qty_p;
       const defect_rate = qty_inspected > 0 ? +((qty_fail / qty_inspected) * 100).toFixed(2) : 0;
 
       // Ensure we have an ID for storage path
@@ -1506,7 +1501,7 @@ export const ReportFormOrganism = ({
         qty_pass,
         qty_fail,
         qty_rework: Number(form.qty_rework) || 0,
-        defect_rate,
+        defect_rate: Number(defect_rate) || 0,
         defect_cat: form.defect_cat,
         defect_loc: form.defect_loc,
         station: form.station,
@@ -1743,8 +1738,8 @@ export const ReportFormOrganism = ({
         className="qc-grid-2"
         style={{
           display: "grid",
-          gridTemplateColumns: "repeat(3, 1fr)",
-          gap: 14,
+          gridTemplateColumns: "repeat(4, 1fr)",
+          gap: 12,
           marginBottom: 20,
         }}
       >
@@ -1767,13 +1762,19 @@ export const ReportFormOrganism = ({
           />
         </div>
         <div>
-          <FieldLabel>Jumlah Diperiksa *</FieldLabel>
+          <FieldLabel>Jumlah Pass *</FieldLabel>
           <TextInput
             type="number"
-            value={form.qty_inspected}
-            onChange={(v) => setF("qty_inspected", v)}
+            value={form.qty_pass}
+            onChange={(v) => setF("qty_pass", v)}
             placeholder="0"
           />
+        </div>
+        <div>
+          <FieldLabel>Jumlah Diperiksa</FieldLabel>
+          <div style={{ background: T.surface, padding: '9px 12px', borderRadius: T.r, border: `1px solid ${T.border}`, fontSize: 13, fontWeight: 700, color: T.blue }}>
+             {Number(form.qty_pass || 0) + snList.length}
+          </div>
         </div>
       </div>
 
