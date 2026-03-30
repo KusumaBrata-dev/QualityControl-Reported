@@ -4,8 +4,9 @@ import { LoginOrganism, NavbarOrganism, ReportFormOrganism, DetailModal, UserFor
 import { DashboardTemplate, ReportsTemplate, MatrixTemplate, UsersTemplate } from "./components/Templates";
 import { ToastNotif, ErrorBoundary, ConfirmModal } from "./components/Molecules";
 import { exportToExcel } from "./utils/exportUtils";
+import { parseExcelImport } from "./utils/importUtils";
 import { db } from "../../firebase";
-import { collection, onSnapshot, doc, setDoc, deleteDoc } from "firebase/firestore";
+import { collection, onSnapshot, doc, setDoc, deleteDoc, addDoc, serverTimestamp, writeBatch } from "firebase/firestore";
 
 
 // ════════════════════════════════════════════════════════════════
@@ -113,6 +114,8 @@ export default function QCReportSystemMain() {
       @media (max-width: 480px) {
         .qc-kpi-grid, .qc-grid-5 { grid-template-columns: 1fr !important; }
         .qc-login-card { padding: 32px 24px !important; width: auto !important; margin: 16px !important; }
+        .qc-mobile-form { max-width: 100% !important; max-height: 100vh !important; border-radius: 0 !important; border: 0 !important; margin: 0 !important; }
+        .qc-mobile-form > div { border-radius: 0 !important; }
       }
     `;
     document.head.appendChild(el);
@@ -129,6 +132,38 @@ export default function QCReportSystemMain() {
     toastTimer.current = setTimeout(() => setToastState(null), 3200);
   }, []);
 
+  // Smart Alert Logic (Threshold > 5%)
+  useEffect(() => {
+    if (!reports.length) return;
+    
+    const dStr = new Date(Date.now() - new Date().getTimezoneOffset() * 60000).toISOString().slice(0, 10);
+    const todayRep = reports.filter(r => (r.inspection_date||"").startsWith(dStr));
+    
+    if (todayRep.length > 0) {
+       const tf = todayRep.reduce((a,r) => a + (Number(r.qty_fail)||0), 0);
+       const ti = todayRep.reduce((a,r) => a + (Number(r.qty_inspected)||0), 0);
+       if (ti > 0) {
+          const rate = (tf / ti) * 100;
+          if (rate > 5) {
+             const key = `qc_alert_${dStr}`;
+             if (!localStorage.getItem(key)) {
+                if ("Notification" in window) {
+                   Notification.requestPermission().then(perm => {
+                      if (perm === "granted") {
+                         new Notification("🚨 Peringatan QC!", {
+                            body: `Defect Rate hari ini melampaui 5% (${rate.toFixed(1)}%). Segera lakukan pengecekan produksi.`,
+                         });
+                      }
+                   });
+                }
+                showToast(`🚨 ALERT: Defect Rate tinggi (${rate.toFixed(1)}%)!`, "err");
+                localStorage.setItem(key, "true");
+             }
+          }
+       }
+    }
+  }, [reports, showToast]);
+
   const canEdit = currentUser && ["admin","operator"].includes(currentUser.role);
   const isAdmin = currentUser?.role === "admin";
 
@@ -139,6 +174,24 @@ export default function QCReportSystemMain() {
     localStorage.setItem("qc_auth_user", JSON.stringify(safeUser));
     showToast(`👋 Selamat datang, ${user.name}!`); 
   };
+  // ── Logging Helper ──────────────────────────────
+  const logAction = useCallback(async (type, targetId, details = {}) => {
+    if (!currentUser) return;
+    try {
+      await addDoc(collection(db, "audit_logs"), {
+        timestamp: serverTimestamp(),
+        userId: currentUser.id,
+        userName: currentUser.name,
+        userRole: currentUser.role,
+        action: type,
+        targetId,
+        ...details
+      });
+    } catch (e) {
+      console.error("Audit log failed:", e);
+    }
+  }, [currentUser]);
+
   const handleLogout = ()   => { 
     setConfirmAct({ title: "Logout", message: "Yakin ingin logout?", onConfirm: () => {
       setCurrentUser(null); 
@@ -169,10 +222,11 @@ export default function QCReportSystemMain() {
   const handleNewReport    = ()  => { setEditReport(null); setFormOpen(true); };
   const handleEditReport   = id  => { setEditReport(reports.find(r => String(r.id) === String(id)) || null); setFormOpen(true); };
   const handleDetail       = id  => { setDetailReport(reports.find(r => String(r.id) === String(id)) || null); setDetailOpen(true); };
-  const handleDeleteReport = id  => {
+  const handleDeleteReport = id => {
     setConfirmAct({ title: "Hapus Laporan", message: "Hapus laporan ini?", onConfirm: async () => {
       try {
         await deleteDoc(doc(db, "reports", String(id)));
+        logAction("DELETE_REPORT", id);
         showToast("🗑 Laporan dihapus");
       } catch { showToast("Gagal menghapus laporan!", "err"); }
       setConfirmAct(null);
@@ -181,11 +235,39 @@ export default function QCReportSystemMain() {
   const handleSaveReport = async data => {
     const isEdit = !!data.id;
     const id = isEdit ? data.id : Math.max(0, ...reports.map(r => Number(r.id) || 0)) + 1;
+    
+    // Default approval status for new reports
+    const reportData = { 
+      ...data, 
+      id,
+      updated_at: new Date().toISOString(),
+      updated_by: currentUser.name
+    };
+    
+    if (!isEdit) {
+      reportData.created_by = currentUser.name;
+      reportData.approval_status = "pending"; // Start as pending
+    }
+
     try {
-      await setDoc(doc(db, "reports", String(id)), { ...data, id }, { merge: true });
+      await setDoc(doc(db, "reports", String(id)), reportData, { merge: true });
+      logAction(isEdit ? "UPDATE_REPORT" : "CREATE_REPORT", id);
       showToast(isEdit ? "✅ Laporan diupdate!" : "✅ Laporan tersimpan!");
     } catch { showToast("Gagal menyimpan laporan!", "err"); }
     setFormOpen(false);
+  };
+
+  const handleApproveReport = async id => {
+    try {
+      await setDoc(doc(db, "reports", String(id)), { 
+        approval_status: "approved", 
+        updated_at: new Date().toISOString(), 
+        updated_by: currentUser.name 
+      }, { merge: true });
+      logAction("APPROVE_REPORT", id);
+      showToast("✅ Laporan berhasil di-approve!");
+      setDetailOpen(false);
+    } catch { showToast("Gagal meng-approve laporan!", "err"); }
   };
 
   // ── Users CRUD ──────────────────────────────────
@@ -197,6 +279,7 @@ export default function QCReportSystemMain() {
     setConfirmAct({ title: "Hapus User", message: `Hapus user "${u?.name || id}"?`, onConfirm: async () => {
       try {
         await deleteDoc(doc(db, "users", String(id)));
+        logAction("DELETE_USER", id, { targetName: u?.name });
         showToast("🗑 User dihapus");
       } catch { showToast("Gagal menghapus user!", "err"); }
       setConfirmAct(null);
@@ -207,6 +290,7 @@ export default function QCReportSystemMain() {
     const id = isEdit ? data.id : Math.max(0, ...users.map(u => Number(u.id) || 0)) + 1;
     try {
       await setDoc(doc(db, "users", String(id)), { ...data, id }, { merge: true });
+      logAction(isEdit ? "UPDATE_USER" : "CREATE_USER", id, { targetName: data.name });
       if (currentUser?.id === id) {
         const { password, ...safe } = { ...data, id };
         setCurrentUser(safe);
@@ -233,6 +317,45 @@ export default function QCReportSystemMain() {
       showToast("📥 Exporting to Excel...");
     } catch (e) {
       showToast("Gagal export file!", "err");
+    }
+  };
+
+  const handleImportExcel = async (file) => {
+    try {
+      showToast("Membaca file Excel...");
+      const data = await parseExcelImport(file);
+      if (!data.length) {
+        showToast("Tidak ada data valid ditemukan di Excel", "err");
+        return;
+      }
+      
+      let maxId = Math.max(0, ...reports.map(r => Number(r.id) || 0));
+      let count = 0;
+      
+      showToast(`Mengimport ${data.length} laporan...`);
+      const batch = writeBatch(db);
+      
+      for (const r of data) {
+         maxId++;
+         const reportData = {
+            ...r,
+            id: maxId,
+            created_at: new Date().toISOString(),
+            updated_at: new Date().toISOString(),
+            created_by: currentUser.name,
+            updated_by: currentUser.name,
+            approval_status: "pending"
+         };
+         batch.set(doc(db, "reports", String(maxId)), reportData);
+         count++;
+      }
+      
+      await batch.commit();
+      logAction("IMPORT_EXCEL_BATCH", null, { count });
+      showToast(`✅ ${count} Laporan berhasil diimport!`);
+    } catch (e) {
+       console.error("Import error:", e);
+       showToast(e.message || "Gagal membaca file Excel!", "err");
     }
   };
 
@@ -264,7 +387,8 @@ export default function QCReportSystemMain() {
             <ReportsTemplate reports={reports} canEdit={canEdit}
               onDetail={handleDetail} onEdit={handleEditReport} onDelete={handleDeleteReport}
               onNewReport={handleNewReport} date={selectedDate} onDateChange={setSelectedDate}
-              onExport={handleExportReports} />
+              onExport={handleExportReports}
+              onImport={handleImportExcel} />
           )}
           {tab === "matrix" && (
             <MatrixTemplate reports={reports} selectedDate={selectedDate} onDateChange={setSelectedDate} />
@@ -285,6 +409,7 @@ export default function QCReportSystemMain() {
       <DetailModal
         open={detailOpen} onClose={() => setDetailOpen(false)}
         report={detailReport} canEdit={canEdit} onEdit={handleEditReport}
+        isAdmin={isAdmin} onApprove={handleApproveReport}
       />
       <UserFormOrganism
         open={userFormOpen} onClose={() => setUserFormOpen(false)}
