@@ -97,8 +97,7 @@ export const ReportsTemplate = ({ reports, canEdit, onDetail, onEdit, onDelete, 
           <FilterField label="Status">
             <SelectInput value={status} onChange={setStatus}>
               <option value="">Semua</option>
-              <option value="pass">✅ Pass</option>
-              <option value="fail">❌ Fail</option>
+              <option value="fail">❌ Reject</option>
             </SelectInput>
           </FilterField>
           <FilterField label="Tanggal"><TextInput type="date" value={date} onChange={onDateChange} /></FilterField>

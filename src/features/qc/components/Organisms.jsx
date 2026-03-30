@@ -441,17 +441,15 @@ export const DashboardCharts = ({ reports, selectedDate, burningInQty }) => {
   const pieData =
     burningInQty > 0
       ? [
-          { name: "Pass", value: passQty },
-          { name: "Fail", value: failQty },
+          { name: "Reject", value: failQty },
           { name: "Belum Diperiksa", value: belumDiperiksa },
         ]
       : [
-          { name: "Pass", value: passQty },
-          { name: "Fail", value: failQty },
+          { name: "Reject", value: failQty },
         ];
 
   const PIE_COLORS =
-    burningInQty > 0 ? [T.green, T.red, T.muted2] : [T.green, T.red];
+    burningInQty > 0 ? [T.red, T.muted2] : [T.red];
 
   const barData = Object.entries(PRODUCTS).map(([id, prod]) => {
     const rs = filtered.filter((r) => r.product_id === Number(id));
@@ -488,7 +486,7 @@ export const DashboardCharts = ({ reports, selectedDate, burningInQty }) => {
       }}
     >
       <Card>
-        <CardHeader title="Total Masuk vs Inspeksi" />
+        <CardHeader title="Grafik Defect" />
         <div style={{ padding: 20, height: 260 }}>
           {noData && !burningInQty ? (
             <div
@@ -536,7 +534,7 @@ export const DashboardCharts = ({ reports, selectedDate, burningInQty }) => {
 
       <Card>
         <CardHeader
-          title="Qty Produksi (Pass) & Defect (Fail)"
+          title="Grafik Defect (Reject) per Model"
           actions={
             <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
               <span style={{ fontSize: 10, color: T.blue, fontWeight: 700 }}>
@@ -600,20 +598,14 @@ export const DashboardCharts = ({ reports, selectedDate, burningInQty }) => {
                   wrapperStyle={{ fontSize: 12 }}
                 />
                 <Bar
-                  dataKey="pass"
-                  name="Unit Lulus (Sesuai Warna)"
+                  dataKey="fail"
+                  name="Unit Gagal (Reject)"
                   radius={[4, 4, 0, 0]}
                 >
                   {barData.map((d, i) => (
                     <Cell key={i} fill={d.fill} />
                   ))}
                 </Bar>
-                <Bar
-                  dataKey="fail"
-                  name="Unit Gagal (Reject)"
-                  fill={T.red}
-                  radius={[4, 4, 0, 0]}
-                />
               </BarChart>
             </ResponsiveContainer>
           )}
@@ -656,7 +648,6 @@ export const ReportTable = ({
     "Tgl Inspeksi",
     "Barang Masuk",
     "Produksi",
-    "Pass",
     "Fail",
     "Defect%",
     "Stasiun",
@@ -671,7 +662,6 @@ export const ReportTable = ({
     "Batch",
     "Tgl Inspeksi",
     "Barang Masuk",
-    "Pass",
     "Fail",
     "Defect%",
     "Status",
@@ -680,7 +670,6 @@ export const ReportTable = ({
   const numCols = new Set([
     "Barang Masuk",
     "Produksi",
-    "Pass",
     "Fail",
     "Defect%",
   ]);
@@ -783,16 +772,6 @@ export const ReportTable = ({
                       {r.qty_produced}
                     </td>
                   )}
-                  <td
-                    style={{
-                      padding: "12px 14px",
-                      textAlign: "right",
-                      fontFamily: T.mono,
-                      color: T.green,
-                    }}
-                  >
-                    {r.qty_pass}
-                  </td>
                   <td
                     style={{
                       padding: "12px 14px",
@@ -929,7 +908,6 @@ export const MatrixOrganism = ({ reports }) => {
     const prod = PRODUCTS[pid];
     return {
       name: `${prod.model} – ${prod.color}`,
-      Pass: rs.filter((r) => r.overall_status === "pass").length,
       Fail: rs.filter((r) => r.overall_status === "fail").length,
     };
   });
@@ -1003,8 +981,11 @@ export const MatrixOrganism = ({ reports }) => {
                         marginBottom: 10,
                       }}
                     >
-                      <StatMini label="Pass" value={p} color={T.green} />
-                      <StatMini label="Fail" value={f} color={T.red} />
+                      <StatMini
+                        label="Total Reject"
+                        value={f}
+                        color={T.red}
+                      />
                       <StatMini
                         label="Avg DR"
                         value={`${avgDR}%`}
@@ -1016,19 +997,6 @@ export const MatrixOrganism = ({ reports }) => {
                         color={T.blue}
                       />
                     </div>
-                    <div
-                      style={{
-                        display: "flex",
-                        justifyContent: "space-between",
-                        fontSize: 11,
-                        color: T.muted,
-                        marginBottom: 5,
-                      }}
-                    >
-                      <span>Pass Rate</span>
-                      <span style={{ fontWeight: 700 }}>{passRate}%</span>
-                    </div>
-                    <ProgressBar value={passRate} color={lc} />
                   </div>
                 );
               })}
@@ -1037,7 +1005,7 @@ export const MatrixOrganism = ({ reports }) => {
         ))}
       </div>
       <Card>
-        <CardHeader title="Perbandingan Pass / Fail per Varian" />
+        <CardHeader title="Grafik Defect per Varian" />
         <div style={{ padding: 20, height: 280 }}>
           <ResponsiveContainer width="100%" height="100%">
             <BarChart
@@ -1057,10 +1025,9 @@ export const MatrixOrganism = ({ reports }) => {
               <YAxis tick={{ fill: T.muted, fontSize: 12 }} />
               <Tooltip contentStyle={ttStyle} />
               <Legend wrapperStyle={{ color: T.muted, fontSize: 12 }} />
-              <Bar dataKey="Pass" stackId="a" fill={T.green} />
               <Bar
                 dataKey="Fail"
-                stackId="a"
+                name="Total Reject"
                 fill={T.red}
                 radius={[4, 4, 0, 0]}
               />
@@ -1312,7 +1279,7 @@ export const ReportFormOrganism = ({
       defect_cat: "",
       defect_loc: "",
       station: "",
-      overall_status: "pass",
+      overall_status: "fail",
       notes: "",
     };
   };
@@ -1377,10 +1344,8 @@ export const ReportFormOrganism = ({
       return;
     }
     const prod = PRODUCTS[form.product_id];
-    const qty_burning_in = Number(form.qty_burning_in) || 0;
-    const qty_pass = Number(form.qty_pass) || 0;
-    const qty_fail = Number(form.qty_fail) || 0;
-    const qty_inspected = qty_pass + qty_fail;
+    const qty_fail = snList.length;
+    const qty_inspected = qty_fail;
     const defect_rate = qty_inspected
       ? +((qty_fail / qty_inspected) * 100).toFixed(2)
       : 0;
@@ -1395,10 +1360,10 @@ export const ReportFormOrganism = ({
       batch_no: form.batch_no,
       production_date: form.production_date,
       inspection_date: form.inspection_date,
-      qty_burning_in,
+      qty_burning_in: Number(form.qty_burning_in) || 0,
       qty_produced: Number(form.qty_produced) || 0,
       qty_inspected,
-      qty_pass,
+      qty_pass: 0,
       qty_fail,
       qty_rework: Number(form.qty_rework) || 0,
       defect_rate,
@@ -1493,37 +1458,6 @@ export const ReportFormOrganism = ({
         </div>
       </div>
 
-      <SectionHeader icon="📊">Data Kuantitas</SectionHeader>
-      <div
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(5, 1fr)",
-          gap: 12,
-          marginBottom: 20,
-        }}
-      >
-        {[
-          ["Barang Masuk", "qty_burning_in"],
-          ["Diproduksi", "qty_produced"],
-          ["Pass", "qty_pass"],
-          ["Fail / Reject", "qty_fail"],
-          ["Rework", "qty_rework"],
-        ].map(([lbl, key]) => (
-          <div key={key}>
-            <FieldLabel>{lbl}</FieldLabel>
-            <TextInput
-              type="number"
-              value={form[key]}
-              onChange={(v) => {
-                setF(key, v);
-                // Auto-sync qty_fail with snList if snList has items? 
-                // Actually, user wants to manually input qty_fail sometimes.
-              }}
-              placeholder="0"
-            />
-          </div>
-        ))}
-      </div>
 
       <SectionHeader icon="📦">Informasi Produk & Batch</SectionHeader>
       <div
@@ -1625,16 +1559,6 @@ export const ReportFormOrganism = ({
             <option value="Assembly">⚙️ Assembly</option>
           </SelectInput>
         </div>
-        <div>
-          <FieldLabel>Overall Status *</FieldLabel>
-          <SelectInput
-            value={form.overall_status}
-            onChange={(v) => setF("overall_status", v)}
-          >
-            <option value="pass">✅ PASS</option>
-            <option value="fail">❌ FAIL</option>
-          </SelectInput>
-        </div>
       </div>
 
       <SectionHeader icon="📝">Catatan</SectionHeader>
@@ -1651,9 +1575,6 @@ export const ReportFormOrganism = ({
 export const DetailModal = ({ open, onClose, report, canEdit, onEdit }) => {
   if (!report) return null;
   const rate = report.defect_rate || 0;
-  const passRate = (report.qty_pass + report.qty_fail) > 0
-    ? ((report.qty_pass / (report.qty_pass + report.qty_fail)) * 100).toFixed(1)
-    : 0;
   return (
     <ModalShell
       open={open}
@@ -1734,7 +1655,6 @@ export const DetailModal = ({ open, onClose, report, canEdit, onEdit }) => {
         {[
           ["Barang Masuk", report.qty_burning_in || "-", T.blue],
           ["Produksi", report.qty_produced, T.text],
-          ["Pass", report.qty_pass, T.green],
           ["Fail", report.qty_fail, T.red],
           ["Rework", report.qty_rework, T.yellow],
         ].map(([l, v, c]) => (
@@ -1773,41 +1693,6 @@ export const DetailModal = ({ open, onClose, report, canEdit, onEdit }) => {
         ))}
       </div>
 
-      {/* Pass Rate bar */}
-      <div
-        style={{
-          background: T.bg,
-          border: `1px solid ${T.border}`,
-          borderRadius: T.r,
-          padding: "12px 14px",
-          marginBottom: 16,
-        }}
-      >
-        <div
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            fontSize: 12,
-            marginBottom: 7,
-          }}
-        >
-          <span style={{ color: T.muted }}>Pass Rate</span>
-          <span
-            style={{
-              fontWeight: 700,
-              fontFamily: T.mono,
-              color: drColor(rate),
-            }}
-          >
-            {passRate}%{" "}
-            <span style={{ color: T.muted }}>(Defect: {rate}%)</span>
-          </span>
-        </div>
-        <ProgressBar
-          value={Number(passRate)}
-          color={report.overall_status === "pass" ? T.green : T.red}
-        />
-      </div>
 
       {/* Defect info */}
       {report.defect_cat && (

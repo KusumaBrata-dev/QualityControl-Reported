@@ -39,12 +39,14 @@ export const CheckpointRow = ({ cp, index, onChange, readOnly }) => (
     {readOnly ? (
       <>
         <span style={{ fontSize: 11, color: T.muted, fontFamily: T.mono }}>{cp.value || ""}</span>
-        <StatusBadge status={cp.result === "na" ? "pass" : cp.result} />
+        <Badge type={cp.result === "fail" ? "fail" : "viewer"}>
+          {cp.result === "fail" ? "✕ FAIL" : "OK"}
+        </Badge>
       </>
     ) : (
       <>
         <SelectInput value={cp.result} onChange={v => onChange(index, "result", v)} style={{ padding: "5px 8px", fontSize: 12 }}>
-          <option value="pass">✓ Pass</option>
+          <option value="pass">OK</option>
           <option value="fail">✕ Fail</option>
           <option value="na">N/A</option>
         </SelectInput>

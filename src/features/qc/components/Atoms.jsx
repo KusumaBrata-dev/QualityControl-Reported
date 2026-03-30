@@ -4,7 +4,6 @@ import { T, COLOR_HEX, COLOR_BGL, ROLE_GRAD } from "../qcConstants";
 /** Badge — colored label chip */
 export const Badge = ({ type = "viewer", style, children }) => {
   const map = {
-    pass:     { bg: T.greenL,                     color: T.green,  border: "rgba(63,185,80,.2)"   },
     fail:     { bg: T.redL,                       color: T.red,    border: "rgba(248,81,73,.2)"   },
     repair:   { bg: "rgba(240,136,62,.1)",        color: T.orange, border: "rgba(240,136,62,.2)" },
     qa:       { bg: T.purpleL,                    color: T.purple, border: "rgba(163,113,247,.2)" },
@@ -148,7 +147,7 @@ export const SectionHeader = ({ icon, children, first = false }) => (
 
 /** StatusBadge — pass/fail */
 export const StatusBadge = ({ status }) => (
-  <Badge type={status}>{status === "pass" ? "✓ PASS" : "✕ FAIL"}</Badge>
+  <Badge type="fail">✕ REJECT</Badge>
 );
 
 /** StationBadge — Repair / QA / Assembly */
@@ -273,7 +272,7 @@ export const DatePicker = ({ value, onChange, activeDates = [] }) => {
                     <div style={{
                       position: "absolute", bottom: 2, left: "50%", transform: "translateX(-50%)",
                       width: 5, height: 5, borderRadius: "50%",
-                      background: isSelected ? "#fff" : T.green,
+                      background: isSelected ? "#fff" : T.blue,
                     }} />
                   )}
                 </div>
