@@ -1861,6 +1861,9 @@ export const DetailModal = ({ open, onClose, report, canEdit, onEdit, isAdmin, o
         }
         footer={
           <>
+            <Btn variant="ghost" onClick={() => window.print()}>
+              📄 Print PDF
+            </Btn>
             <Btn variant="ghost" onClick={onClose}>
               Tutup
             </Btn>

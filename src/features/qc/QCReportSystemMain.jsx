@@ -406,7 +406,7 @@ export default function QCReportSystemMain() {
     // Default approval status for new reports
     const reportData = {
       ...data,
-      id,
+      id: reportId,
       updated_at: new Date().toISOString(),
       updated_by: currentUser.name,
     };
