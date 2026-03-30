@@ -1289,6 +1289,7 @@ export const ReportFormOrganism = ({
   const [snInput, setSnInput] = useState("");
   const [cpState, setCpState] = useState(mkCp());
   const [pickerOpen, setPickerOpen] = useState(false);
+  const [imgList, setImgList] = useState([]); // Base64 strings
 
   useEffect(() => {
     if (!open) return;
@@ -1313,10 +1314,12 @@ export const ReportFormOrganism = ({
       });
       setSnList(r.serial_numbers || []);
       setCpState(r.checkpoints || mkCp());
+      setImgList(r.images || []);
     } else {
       setForm(empty());
       setSnList([]);
       setCpState(mkCp());
+      setImgList([]);
     }
     setSnInput("");
     setPickerOpen(false);
@@ -1336,6 +1339,21 @@ export const ReportFormOrganism = ({
     }
     setSnList((s) => [...s, val]);
     setSnInput("");
+  };
+
+  const handleImages = (e) => {
+    const files = Array.from(e.target.files);
+    if (!files.length) return;
+    if (imgList.length + files.length > 5) {
+      showToast("Maksimal 5 foto per laporan!", "err");
+      return;
+    }
+    files.forEach((file) => {
+      const reader = new FileReader();
+      reader.onload = (ev) =>
+        setImgList((prev) => [...prev, ev.target.result]);
+      reader.readAsDataURL(file);
+    });
   };
 
   const handleSave = () => {
@@ -1373,7 +1391,7 @@ export const ReportFormOrganism = ({
       overall_status: form.overall_status,
       notes: form.notes,
       serial_numbers: [...snList],
-      images: [],
+      images: [...imgList],
       checkpoints: cpState.map((c) => ({ ...c })),
     });
   };
@@ -1456,6 +1474,84 @@ export const ReportFormOrganism = ({
           <span style={{ fontWeight: 700, color: T.red }}>{snList.length}</span>{" "}
           SN
         </div>
+      </div>
+
+      <SectionHeader icon="📸">Foto Defect</SectionHeader>
+      <div
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(auto-fill, minmax(100px, 1fr))",
+          gap: 12,
+          marginBottom: 16,
+        }}
+      >
+        <label
+          style={{
+            width: 100,
+            height: 100,
+            background: T.bg,
+            border: `2px dashed ${T.border}`,
+            borderRadius: T.r2,
+            display: "flex",
+            flexDirection: "column",
+            alignItems: "center",
+            justifyContent: "center",
+            cursor: "pointer",
+            transition: "all .2s",
+          }}
+          onMouseEnter={(e) => (e.target.style.borderColor = T.blue)}
+          onMouseLeave={(e) => (e.target.style.borderColor = T.border)}
+        >
+          <input
+            type="file"
+            accept="image/*"
+            multiple
+            onChange={handleImages}
+            style={{ display: "none" }}
+          />
+          <span style={{ fontSize: 24, marginBottom: 4 }}>📷</span>
+          <span style={{ fontSize: 10, color: T.muted }}>Unggah Foto</span>
+        </label>
+        {imgList.map((img, i) => (
+          <div
+            key={i}
+            style={{
+              position: "relative",
+              width: 100,
+              height: 100,
+              borderRadius: T.r2,
+              overflow: "hidden",
+              border: `1px solid ${T.border}`,
+            }}
+          >
+            <img
+              src={img}
+              alt="Defect"
+              style={{ width: "100%", height: "100%", objectFit: "cover" }}
+            />
+            <button
+              onClick={() => setImgList((prev) => prev.filter((_, idx) => idx !== i))}
+              style={{
+                position: "absolute",
+                top: 4,
+                right: 4,
+                width: 20,
+                height: 20,
+                borderRadius: "50%",
+                background: "rgba(248,81,73,.8)",
+                border: "none",
+                color: "#fff",
+                fontSize: 10,
+                cursor: "pointer",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+              }}
+            >
+              ✕
+            </button>
+          </div>
+        ))}
       </div>
 
 
@@ -1602,45 +1698,65 @@ export const DetailModal = ({ open, onClose, report, canEdit, onEdit }) => {
         </>
       }
     >
-      {/* Info grid */}
-      <div
-        className="qc-grid-3"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3,1fr)",
-          gap: 10,
-          marginBottom: 16,
-        }}
-      >
-        {[
-          ["Model", report.model],
-          ["Warna", <ColorTag color={report.color} />],
-          ["Tgl Produksi", report.production_date],
-          ["Tgl Inspeksi", (report.inspection_date || "").substring(0, 16)],
-        ].map(([l, v]) => (
-          <div
-            key={l}
-            style={{
-              background: T.bg,
-              border: `1px solid ${T.border}`,
-              borderRadius: T.r,
-              padding: "11px 14px",
-            }}
-          >
-            <div
-              style={{
-                fontSize: 10,
-                color: T.muted,
-                textTransform: "uppercase",
-                letterSpacing: "1px",
-                marginBottom: 4,
-              }}
-            >
-              {l}
+      {/* KPIs & Summary */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 280px", gap: 16, marginBottom: 20 }}>
+        <div 
+          style={{ 
+            background: T.surface2, 
+            border: `1px solid ${T.border}`, 
+            borderRadius: T.r2, 
+            padding: 16,
+            display: "grid",
+            gridTemplateColumns: "1fr 1fr",
+            gap: 12
+          }}
+        >
+          {[
+            { l: "Batch No", v: report.batch_no, icon: "📦" },
+            { l: "Inspector", v: report.inspector || "Admin", icon: "👤" },
+            { l: "Tgl Inspeksi", v: (report.inspection_date || "").replace("T", " "), icon: "📅" },
+            { l: "Tgl Produksi", v: report.production_date, icon: "🏭" },
+            { l: "Model", v: report.model, icon: "⚙️" },
+            { l: "Warna", v: <ColorTag color={report.color} />, icon: "🎨" },
+          ].map((item, i) => (
+            <div key={i} style={{ display: "flex", alignItems: "center", gap: 10 }}>
+              <div style={{ fontSize: 16, opacity: 0.6 }}>{item.icon}</div>
+              <div>
+                <div style={{ fontSize: 10, color: T.muted, textTransform: "uppercase" }}>{item.l}</div>
+                <div style={{ fontSize: 13, fontWeight: 700 }}>{item.v}</div>
+              </div>
             </div>
-            <div style={{ fontWeight: 700, fontSize: 13 }}>{v}</div>
+          ))}
+        </div>
+
+        <div 
+          style={{ 
+            background: T.surface2, 
+            border: `1px solid ${T.border}`, 
+            borderRadius: T.r2, 
+            padding: 16,
+            display: "flex",
+            flexDirection: "column",
+            justifyContent: "center",
+            textAlign: "center",
+            position: "relative",
+            overflow: "hidden"
+          }}
+        >
+          <div style={{ position: "absolute", top: 0, right: 0, padding: 8 }}>
+            <StatusBadge status={report.overall_status} />
           </div>
-        ))}
+          <div style={{ fontSize: 11, color: T.muted, fontWeight: 600, marginBottom: 4 }}>QC PASS RATE</div>
+          <div style={{ fontSize: 32, fontWeight: 900, color: rate > 98 ? T.green : rate > 95 ? T.yellow : T.red }}>
+            {(100 - rate).toFixed(1)}%
+          </div>
+          <div style={{ height: 6, background: T.border, borderRadius: 3, marginTop: 10, overflow: "hidden" }}>
+             <div style={{ width: `${100 - rate}%`, height: "100%", background: rate > 5 ? T.red : T.green, transition: "width 1s ease" }} />
+          </div>
+          <div style={{ fontSize: 10, color: T.muted, marginTop: 8 }}>
+            Reject Rate: <span style={{ color: T.red, fontWeight: 700 }}>{rate}%</span>
+          </div>
+        </div>
       </div>
 
       {/* Qty KPIs */}
@@ -1648,179 +1764,100 @@ export const DetailModal = ({ open, onClose, report, canEdit, onEdit }) => {
         style={{
           display: "grid",
           gridTemplateColumns: "repeat(auto-fit, minmax(110px, 1fr))",
-          gap: 8,
-          marginBottom: 16,
+          gap: 12,
+          marginBottom: 20
         }}
       >
         {[
-          ["Barang Masuk", report.qty_burning_in || "-", T.blue],
-          ["Produksi", report.qty_produced, T.text],
-          ["Fail", report.qty_fail, T.red],
+          ["Total Diperiksa", report.qty_inspected, T.blue],
+          ["Reject", report.qty_fail, T.red],
           ["Rework", report.qty_rework, T.yellow],
         ].map(([l, v, c]) => (
-          <div
-            key={l}
-            style={{
-              background: T.bg,
-              border: `1px solid ${T.border}`,
-              borderRadius: T.r,
-              padding: 10,
-              textAlign: "center",
-            }}
-          >
-            <div
-              style={{
-                fontSize: 9.5,
-                color: T.muted,
-                textTransform: "uppercase",
-                letterSpacing: "1px",
-                marginBottom: 4,
-              }}
-            >
-              {l}
-            </div>
-            <div
-              style={{
-                fontSize: 20,
-                fontWeight: 800,
-                fontFamily: T.mono,
-                color: c,
-              }}
-            >
-              {v}
-            </div>
+          <div key={l} style={{ background: T.surface2, border: `1px solid ${T.border}`, borderRadius: T.r2, padding: "12px 16px", textAlign: "center" }}>
+            <div style={{ fontSize: 10, color: T.muted, textTransform: "uppercase", marginBottom: 4 }}>{l}</div>
+            <div style={{ fontSize: 18, fontWeight: 800, color: c }}>{v}</div>
           </div>
         ))}
       </div>
 
-
-      {/* Defect info */}
-      {report.defect_cat && (
-        <div
-          className="qc-grid-3"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr 1fr",
-            gap: 10,
-            marginBottom: 16,
-          }}
-        >
-          {[
-            ["Jenis Defect", DEFECT_CATS.find(d => d.v === report.defect_cat)?.l || report.defect_cat],
-            ["Lokasi", report.defect_loc || "–"],
-            ["Stasiun", report.station || "–"],
-          ].map(([l, v]) => (
-            <div
-              key={l}
-              style={{
-                background: T.redL,
-                border: "1px solid rgba(248,81,73,.15)",
-                borderRadius: T.r,
-                padding: "11px 14px",
-              }}
-            >
-              <div
-                style={{
-                  fontSize: 10,
-                  color: T.red,
-                  textTransform: "uppercase",
-                  letterSpacing: "1px",
-                  marginBottom: 4,
-                }}
-              >
-                {l}
-              </div>
-              <div style={{ fontWeight: 700, fontSize: 13, color: T.red }}>
-                {v}
-              </div>
+      {/* Defect Details */}
+      <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 16, marginBottom: 20 }}>
+        <div style={{ background: T.surface2, border: `1px solid ${T.border}`, borderRadius: T.r2, padding: 16 }}>
+          <SectionHeader icon="🔎" first style={{ marginBottom: 12 }}>Detail Defect</SectionHeader>
+          <div style={{ display: "flex", flexDirection: "column", gap: 8 }}>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span style={{ color: T.muted }}>Kategori:</span>
+              <span style={{ fontWeight: 600 }}>{DEFECT_CATS.find(d => d.v === report.defect_cat)?.l || report.defect_cat || "–"}</span>
             </div>
-          ))}
-        </div>
-      )}
-
-      {/* Serial Numbers */}
-      {(report.serial_numbers || []).length > 0 && (
-        <>
-          <div
-            style={{
-              fontSize: 10.5,
-              fontWeight: 700,
-              color: T.muted,
-              textTransform: "uppercase",
-              letterSpacing: "1.2px",
-              marginBottom: 8,
-            }}
-          >
-            Serial Number Reject ({report.serial_numbers.length})
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span style={{ color: T.muted }}>Lokasi:</span>
+              <span style={{ fontWeight: 600 }}>{report.defect_loc || "–"}</span>
+            </div>
+            <div style={{ display: "flex", justifyContent: "space-between" }}>
+              <span style={{ color: T.muted }}>Stasiun:</span>
+              <span style={{ fontWeight: 600 }}>{report.station || "–"}</span>
+            </div>
           </div>
-          <div
-            style={{
-              display: "flex",
-              flexWrap: "wrap",
-              gap: 6,
-              marginBottom: 16,
-            }}
-          >
-            {report.serial_numbers.map((sn) => (
-              <SNChip key={sn} sn={sn} />
+        </div>
+        <div style={{ background: T.surface2, border: `1px solid ${T.border}`, borderRadius: T.r2, padding: 16 }}>
+          <SectionHeader icon="📝" first style={{ marginBottom: 12 }}>Catatan</SectionHeader>
+          <div style={{ fontSize: 13, color: report.notes ? T.text : T.muted, fontStyle: report.notes ? "normal" : "italic" }}>
+            {report.notes || "Tidak ada catatan."}
+          </div>
+        </div>
+      </div>
+
+      {/* Photo Gallery */}
+      {report.images && report.images.length > 0 && (
+        <div style={{ marginBottom: 20 }}>
+          <SectionHeader icon="📸">Foto Defect</SectionHeader>
+          <div style={{ display: "flex", flexWrap: "wrap", gap: 10 }}>
+            {report.images.map((img, i) => (
+              <div 
+                key={i} 
+                style={{ 
+                  width: 140, 
+                  height: 140, 
+                  borderRadius: T.r2, 
+                  overflow: "hidden", 
+                  border: `1px solid ${T.border}`,
+                  cursor: "pointer",
+                  transition: "transform .2s"
+                }}
+                onClick={() => window.open(img, "_blank")}
+                onMouseEnter={e => e.currentTarget.style.transform = "scale(1.03)"}
+                onMouseLeave={e => e.currentTarget.style.transform = "scale(1)"}
+              >
+                <img src={img} alt="Defect" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
+              </div>
             ))}
           </div>
-        </>
-      )}
-
-      {/* Checkpoints */}
-      <div
-        style={{
-          fontSize: 10.5,
-          fontWeight: 700,
-          color: T.muted,
-          textTransform: "uppercase",
-          letterSpacing: "1.2px",
-          marginBottom: 8,
-        }}
-      >
-        Checkpoint QC
-      </div>
-      <div
-        style={{
-          border: `1px solid ${T.border}`,
-          borderRadius: T.r2,
-          overflow: "hidden",
-          marginBottom: 16,
-        }}
-      >
-        {(report.checkpoints || mkCp()).map((cp, i) => (
-          <CheckpointRow key={i} cp={cp} index={i} readOnly />
-        ))}
-      </div>
-
-      {/* Notes */}
-      {report.notes && (
-        <div
-          style={{
-            background: T.bg,
-            border: `1px solid ${T.border}`,
-            borderRadius: T.r,
-            padding: "12px 14px",
-          }}
-        >
-          <div
-            style={{
-              fontSize: 10,
-              color: T.muted,
-              textTransform: "uppercase",
-              letterSpacing: "1px",
-              marginBottom: 4,
-            }}
-          >
-            Catatan
-          </div>
-          <div style={{ fontSize: 13 }}>{report.notes}</div>
         </div>
       )}
+
+      {/* SN List */}
+      <SectionHeader icon="📟">Serial Numbers ({report.serial_numbers?.length || 0})</SectionHeader>
+      <div 
+        style={{ 
+          background: T.surface2, 
+          border: `1px solid ${T.border}`, 
+          borderRadius: T.r2, 
+          padding: 12,
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 6
+        }}
+      >
+        {report.serial_numbers?.map(sn => (
+          <div key={sn} style={{ background: T.bg, border: `1px solid ${T.border}`, borderRadius: 4, padding: "4px 8px", fontSize: 12, fontFamily: T.mono }}>
+            {sn}
+          </div>
+        ))}
+      </div>
     </ModalShell>
   );
 };
+
 
 /** UserFormOrganism — create / edit user modal */
 export const UserFormOrganism = ({

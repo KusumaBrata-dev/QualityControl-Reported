@@ -54,7 +54,7 @@ export const DashboardTemplate = ({ reports, canEdit, dailyProd, onSaveDailyProd
 };
 
 /** ReportsTemplate — with filter bar */
-export const ReportsTemplate = ({ reports, canEdit, onDetail, onEdit, onDelete, onNewReport, date, onDateChange }) => {
+export const ReportsTemplate = ({ reports, canEdit, onDetail, onEdit, onDelete, onNewReport, date, onDateChange, onExport }) => {
   const [search, setSearch] = useState("");
   const [model,  setModel]  = useState("");
   const [color,  setColor]  = useState("");
@@ -105,7 +105,10 @@ export const ReportsTemplate = ({ reports, canEdit, onDetail, onEdit, onDelete, 
         </div>
         <div className="qc-flex-col-mobile" style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginTop: 12, paddingTop: 12, borderTop: `1px solid ${T.border}` }}>
           <span style={{ fontSize: 12, color: T.muted }}>Menampilkan {filtered.length} dari {reports.length} laporan</span>
-          {canEdit && <Btn variant="primary" size="sm" onClick={onNewReport}>+ Laporan Baru</Btn>}
+          <div style={{ display: "flex", gap: 8 }}>
+            <Btn variant="blue_outline" size="sm" onClick={() => onExport(filtered)}>📥 Export Excel</Btn>
+            {canEdit && <Btn variant="primary" size="sm" onClick={onNewReport}>+ Laporan Baru</Btn>}
+          </div>
         </div>
       </div>
       <Card>

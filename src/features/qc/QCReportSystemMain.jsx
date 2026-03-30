@@ -3,6 +3,7 @@ import { T, SEED_REPORTS, SEED_USERS } from "./qcConstants";
 import { LoginOrganism, NavbarOrganism, ReportFormOrganism, DetailModal, UserFormOrganism, ChangePwOrganism } from "./components/Organisms";
 import { DashboardTemplate, ReportsTemplate, MatrixTemplate, UsersTemplate } from "./components/Templates";
 import { ToastNotif, ErrorBoundary, ConfirmModal } from "./components/Molecules";
+import { exportToExcel } from "./utils/exportUtils";
 import { db } from "../../firebase";
 import { collection, onSnapshot, doc, setDoc, deleteDoc } from "firebase/firestore";
 
@@ -49,7 +50,10 @@ export default function QCReportSystemMain() {
 
   useEffect(() => {
     const unsubReports = onSnapshot(collection(db, "reports"), snap => {
-      setReports(snap.docs.map(d => ({ ...d.data(), id: Number(d.id) })));
+      setReports(snap.docs.map(d => {
+        const idNum = Number(d.id);
+        return { ...d.data(), id: isNaN(idNum) ? d.id : idNum };
+      }));
       setLoading(false);
     });
 
@@ -163,8 +167,8 @@ export default function QCReportSystemMain() {
 
   // ── Reports CRUD ──────────────────────────────────
   const handleNewReport    = ()  => { setEditReport(null); setFormOpen(true); };
-  const handleEditReport   = id  => { setEditReport(reports.find(r => r.id === id) || null); setFormOpen(true); };
-  const handleDetail       = id  => { setDetailReport(reports.find(r => r.id === id) || null); setDetailOpen(true); };
+  const handleEditReport   = id  => { setEditReport(reports.find(r => String(r.id) === String(id)) || null); setFormOpen(true); };
+  const handleDetail       = id  => { setDetailReport(reports.find(r => String(r.id) === String(id)) || null); setDetailOpen(true); };
   const handleDeleteReport = id  => {
     setConfirmAct({ title: "Hapus Laporan", message: "Hapus laporan ini?", onConfirm: async () => {
       try {
@@ -221,6 +225,17 @@ export default function QCReportSystemMain() {
     } catch { showToast("Gagal mengubah password!", "err"); }
   };
 
+  const handleExportReports = (filteredData) => {
+    try {
+      exportToExcel(filteredData || reports, "QC_Reports", {
+        filterDesc: filteredData ? "Filtered Results" : "All Data"
+      });
+      showToast("📥 Exporting to Excel...");
+    } catch (e) {
+      showToast("Gagal export file!", "err");
+    }
+  };
+
   // ── Render ────────────────────────────────────────
   if (loading) return <div style={{ minHeight: "100vh", background: T.bg }} />;
 
@@ -248,7 +263,8 @@ export default function QCReportSystemMain() {
           {tab === "reports" && (
             <ReportsTemplate reports={reports} canEdit={canEdit}
               onDetail={handleDetail} onEdit={handleEditReport} onDelete={handleDeleteReport}
-              onNewReport={handleNewReport} date={selectedDate} onDateChange={setSelectedDate} />
+              onNewReport={handleNewReport} date={selectedDate} onDateChange={setSelectedDate}
+              onExport={handleExportReports} />
           )}
           {tab === "matrix" && (
             <MatrixTemplate reports={reports} selectedDate={selectedDate} onDateChange={setSelectedDate} />
