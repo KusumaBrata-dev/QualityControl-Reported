@@ -62,31 +62,30 @@ export const LoginOrganism = ({ users, onLogin }) => {
   const handle = () => {
     setError("");
     setLoading(true);
-    setTimeout(() => {
-      if (!uname || !pass) {
-        setError("⚠ Username dan password wajib diisi");
-        setLoading(false);
-        return;
-      }
-      const user = users.find((u) => u.username === uname.toLowerCase());
-      if (!user) {
-        setError("❌ Username tidak ditemukan");
-        setLoading(false);
-        return;
-      }
-      if (!user.active) {
-        setError("⛔ Akun nonaktif. Hubungi Admin.");
-        setLoading(false);
-        return;
-      }
-      if (user.password !== pass) {
-        setError("❌ Password salah");
-        setPass("");
-        setLoading(false);
-        return;
-      }
-      onLogin(user);
-    }, 600);
+    if (!uname || !pass) {
+      setError("⚠ Username dan password wajib diisi");
+      setLoading(false);
+      return;
+    }
+    const user = users.find((u) => u.username === uname.toLowerCase());
+    if (!user) {
+      setError("❌ Username tidak ditemukan");
+      setLoading(false);
+      return;
+    }
+    if (!user.active) {
+      setError("⛔ Akun nonaktif. Hubungi Admin.");
+      setLoading(false);
+      return;
+    }
+    if (user.password !== pass) {
+      setError("❌ Password salah");
+      setPass("");
+      setLoading(false);
+      return;
+    }
+    onLogin(user);
+    setLoading(false);
   };
 
   return (

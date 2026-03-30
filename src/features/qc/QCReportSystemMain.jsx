@@ -63,44 +63,55 @@ export default function QCReportSystemMain() {
 
 
   useEffect(() => {
-    const unsubReports = onSnapshot(
-      collection(db, "reports"),
+    // Self-healing: if users are empty after 2 seconds, seed from constants
+    // (This helps the very first initialization)
+    const unsubReports = onSnapshot(collection(db, "reports"), 
       snap => {
         setReports(snap.docs.map(d => {
           const idNum = Number(d.id);
           return { ...d.data(), id: isNaN(idNum) ? d.id : idNum };
         }));
-        setLoading(false);
+        // Seed if empty and first load
+        if (snap.empty) {
+          console.log("Seeding reports...");
+          SEED_REPORTS.forEach(r => setDoc(doc(db, "reports", String(r.id)), r));
+        }
       },
-      err => {
-        console.error("Failed load reports:", err);
-        showToast("Database connection failed. Try refreshing.", "err");
-        setLoading(false);
-      }
+      err => { console.error("Reports load fail:", err); showToast("Gagal memuat data laporan", "err"); }
     );
 
-    const unsubUsers = onSnapshot(
-      collection(db, "users"),
+    const unsubUsers = onSnapshot(collection(db, "users"), 
       snap => {
-        setUsers(snap.docs.map(d => ({ ...d.data(), id: Number(d.id) })));
+        const uList = snap.docs.map(d => ({ ...d.data(), id: Number(d.id) || d.id }));
+        setUsers(uList);
+        setLoading(false); // Once we have users list, we can show login
+        
+        // Seed initial admin if zero users
+        if (snap.empty) {
+          console.log("Seeding users...");
+          SEED_USERS.forEach(u => setDoc(doc(db, "users", String(u.id)), u));
+        }
       },
-      err => console.error("Failed to load users:", err)
+      err => { console.error("Users load fail:", err); setLoading(false); }
     );
 
-    const unsubDaily = onSnapshot(
-      collection(db, "daily_production"),
+    const unsubDaily = onSnapshot(collection(db, "daily_production"), 
       snap => {
         const data = {};
         snap.docs.forEach(d => { data[d.id] = d.data().qty; });
         setDailyProd(data);
       },
-      err => console.error("Failed to load daily_production:", err)
+      err => console.error("Daily prod fail:", err)
     );
+
+    // Safety timeout: don't hang forever if firebase is slow
+    const timer = setTimeout(() => setLoading(false), 3000);
 
     return () => {
       unsubReports();
       unsubUsers();
       unsubDaily();
+      clearTimeout(timer);
     };
   }, []);
   // Inject global CSS once
