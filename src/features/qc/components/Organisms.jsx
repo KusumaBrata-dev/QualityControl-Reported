@@ -20,7 +20,6 @@ import {
   drColor,
   mkCp,
   DEFECT_CATS,
-  INSPECTORS,
 } from "../qcConstants";
 import {
   Badge,
