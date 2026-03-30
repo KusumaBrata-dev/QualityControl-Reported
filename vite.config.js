@@ -14,7 +14,7 @@ export default defineConfig({
             if (id.includes('react')) return 'vendor';
             if (id.includes('recharts')) return 'charts';
           }
-        },bisa 
+        },
       },
     },
   },
