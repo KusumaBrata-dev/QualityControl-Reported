@@ -273,11 +273,13 @@ export const TextInput = ({
   placeholder,
   type = "text",
   style = {},
+  onKeyDown,
 }) => (
   <input
     type={type}
     value={value}
     onChange={(e) => onChange(e.target.value)}
+    onKeyDown={onKeyDown}
     placeholder={placeholder}
     style={{
       width: "100%",

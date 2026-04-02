@@ -96,13 +96,11 @@ export const SNChip = ({ sn, onRemove }) => (
 /** CheckpointRow — single QC checkpoint (read / edit) */
 export const CheckpointRow = ({ cp, index, onChange, readOnly }) => (
   <div
+    className="flex flex-col md:grid md:grid-cols-[2.5fr_1fr_1fr] md:items-center"
     style={{
-      display: "grid",
-      gridTemplateColumns: "2.5fr 1fr 1fr",
       gap: 8,
       padding: "10px 14px",
       borderBottom: `1px solid ${T.border2}`,
-      alignItems: "center",
       background: index % 2 === 0 ? "transparent" : "rgba(255,255,255,.02)",
     }}
   >

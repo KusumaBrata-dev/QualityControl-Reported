@@ -16,15 +16,8 @@ import {
   Line,
   ReferenceLine,
 } from "recharts";
-import {
-  T,
-  PRODUCTS,
-  COLOR_HEX,
-  genNo,
-  drColor,
-  mkCp,
-  DEFECT_CATS,
-} from "../qcConstants";
+import { T, PRODUCTS, COLOR_HEX, genNo, drColor, mkCp } from "../qcConstants";
+import { DEFECT_CATS } from "../../../firebase";
 import {
   Badge,
   Btn,
@@ -71,7 +64,7 @@ export const LoginOrganism = ({ users, onLogin, dbStats }) => {
       return;
     }
     const user = users.find(
-      (u) => u.username?.toLowerCase().trim() === uname.toLowerCase().trim()
+      (u) => u.username?.toLowerCase().trim() === uname.toLowerCase().trim(),
     );
     if (!user) {
       setError("❌ Username tidak ditemukan");
@@ -204,6 +197,7 @@ export const LoginOrganism = ({ users, onLogin, dbStats }) => {
           <TextInput
             value={uname}
             onChange={setUname}
+            onKeyDown={(e) => e.key === "Enter" && handle()}
             placeholder="Masukkan username…"
           />
         </div>
@@ -212,6 +206,7 @@ export const LoginOrganism = ({ users, onLogin, dbStats }) => {
           <TextInput
             value={pass}
             onChange={setPass}
+            onKeyDown={(e) => e.key === "Enter" && handle()}
             placeholder="Masukkan password…"
             type="password"
           />
@@ -262,6 +257,7 @@ export const NavbarOrganism = ({
   canEdit,
   isAdmin,
   onNewReport,
+  onOpenScanner,
   onLogout,
 }) => (
   <nav
@@ -316,7 +312,7 @@ export const NavbarOrganism = ({
         </div>
       </div>
       {/* Tabs */}
-      <div className="qc-nav-tabs" style={{ display: "flex", gap: 2 }}>
+      <div className="qc-nav-tabs flex overflow-x-auto whitespace-nowrap scrollbar-hide flex-nowrap" style={{ gap: 2, paddingBottom: 2 }}>
         {[
           { key: "dashboard", label: "📊 Dashboard" },
           { key: "reports", label: "📋 Laporan QC" },
@@ -355,9 +351,14 @@ export const NavbarOrganism = ({
           <ClockDisplay />
         </div>
         {canEdit && (
-          <Btn variant="primary" size="sm" onClick={onNewReport}>
-            + Laporan Baru
-          </Btn>
+          <div style={{ display: "flex", gap: 8 }}>
+            <Btn variant="blue_outline" size="sm" onClick={onOpenScanner}>
+              📷 Scan Barcode
+            </Btn>
+            <Btn variant="primary" size="sm" onClick={onNewReport}>
+              + Laporan Baru
+            </Btn>
+          </div>
         )}
         <NavUserChip user={user} />
         <Btn variant="ghost" size="sm" onClick={onLogout}>
@@ -400,13 +401,7 @@ export const DashboardKPIs = ({ reports, burningInQty }) => {
         </div>
       )}
       <div
-        className="qc-kpi-grid"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(3,1fr)",
-          gap: 14,
-          marginBottom: 20,
-        }}
+        className="qc-kpi-grid grid grid-cols-1 sm:grid-cols-3 gap-[14px] mb-[20px]"
       >
         <KpiCard
           colorKey="blue"
@@ -452,18 +447,18 @@ export const DashboardCharts = ({ reports, selectedDate, burningInQty }) => {
           { name: "Reject", value: failQty },
           { name: "Pass", value: passQty },
           { name: "Belum Diperiksa", value: belumDiperiksa },
-        ].filter(d => d.value > 0)
+        ].filter((d) => d.value > 0)
       : [
           { name: "Reject", value: failQty },
           { name: "Pass", value: passQty },
-        ].filter(d => d.value > 0);
+        ].filter((d) => d.value > 0);
 
   const PIE_COLORS_MAP = {
-    "Reject": T.red,
-    "Pass": T.green,
+    Reject: T.red,
+    Pass: T.green,
     "Belum Diperiksa": T.muted2,
   };
-  const PIE_COLORS = pieData.map(d => PIE_COLORS_MAP[d.name]);
+  const PIE_COLORS = pieData.map((d) => PIE_COLORS_MAP[d.name]);
 
   const barData = Object.entries(PRODUCTS).map(([id, prod]) => {
     const rs = filtered.filter((r) => r.product_id === Number(id));
@@ -491,215 +486,274 @@ export const DashboardCharts = ({ reports, selectedDate, burningInQty }) => {
 
   // --- Pareto Chart Data ---
   const paretoAggr = {};
-  filtered.forEach(r => {
+  filtered.forEach((r) => {
     if (Number(r.qty_fail) > 0 && r.defect_cat) {
-       paretoAggr[r.defect_cat] = (paretoAggr[r.defect_cat] || 0) + Number(r.qty_fail);
+      paretoAggr[r.defect_cat] =
+        (paretoAggr[r.defect_cat] || 0) + Number(r.qty_fail);
     }
   });
-  const paretoSorted = Object.entries(paretoAggr).map(([cat, val]) => ({ cat, val })).sort((a,b) => b.val - a.val);
+  const paretoSorted = Object.entries(paretoAggr)
+    .map(([cat, val]) => ({ cat, val }))
+    .sort((a, b) => b.val - a.val);
   const totalParetoFail = paretoSorted.reduce((s, d) => s + d.val, 0);
   let cumSum = 0;
-  const paretoData = paretoSorted.map(d => {
-     cumSum += d.val;
-     return {
-        name: d.cat,
-        value: d.val,
-        cumPercent: totalParetoFail ? Number(((cumSum / totalParetoFail) * 100).toFixed(1)) : 0
-     };
+  const paretoData = paretoSorted.map((d) => {
+    cumSum += d.val;
+    return {
+      name: d.cat,
+      value: d.val,
+      cumPercent: totalParetoFail
+        ? Number(((cumSum / totalParetoFail) * 100).toFixed(1))
+        : 0,
+    };
   });
 
   // --- SPC Trend Analysis Data (Last 14 active days) ---
-  const allDates = Array.from(new Set(reports.map(r => (r.inspection_date||"").slice(0,10)))).filter(Boolean).sort();
+  const allDates = Array.from(
+    new Set(reports.map((r) => (r.inspection_date || "").slice(0, 10))),
+  )
+    .filter(Boolean)
+    .sort();
   const recentDates = allDates.slice(-14);
-  const dailyRateData = recentDates.map(d => {
-     const db = reports.filter(r => (r.inspection_date||"").startsWith(d));
-     const tf = db.reduce((s,r) => s + (Number(r.qty_fail)||0), 0);
-     const ti = db.reduce((s,r) => s + (Number(r.qty_inspected)||0), 0);
-     return {
-        date: d.slice(5),
-        rate: ti ? Number(((tf/ti)*100).toFixed(2)) : 0
-     };
+  const dailyRateData = recentDates.map((d) => {
+    const db = reports.filter((r) => (r.inspection_date || "").startsWith(d));
+    const tf = db.reduce((s, r) => s + (Number(r.qty_fail) || 0), 0);
+    const ti = db.reduce((s, r) => s + (Number(r.qty_inspected) || 0), 0);
+    return {
+      date: d.slice(5),
+      rate: ti ? Number(((tf / ti) * 100).toFixed(2)) : 0,
+    };
   });
   const rateSum = dailyRateData.reduce((s, d) => s + d.rate, 0);
   const rateAvg = dailyRateData.length ? rateSum / dailyRateData.length : 0;
-  const varSum = dailyRateData.reduce((s,d) => s + Math.pow(d.rate - rateAvg, 2), 0);
-  const stdev = dailyRateData.length ? Math.sqrt(varSum / dailyRateData.length) : 0;
-  const UCL = Number((rateAvg + 3*stdev).toFixed(2));
-  const LCL = Number(Math.max(0, rateAvg - 3*stdev).toFixed(2));
-  
-  const spcData = dailyRateData.map(d => ({
-      ...d,
-      Avg: Number(rateAvg.toFixed(2)),
-      UCL,
-      LCL
+  const varSum = dailyRateData.reduce(
+    (s, d) => s + Math.pow(d.rate - rateAvg, 2),
+    0,
+  );
+  const stdev = dailyRateData.length
+    ? Math.sqrt(varSum / dailyRateData.length)
+    : 0;
+  const UCL = Number((rateAvg + 3 * stdev).toFixed(2));
+  const LCL = Number(Math.max(0, rateAvg - 3 * stdev).toFixed(2));
+
+  const spcData = dailyRateData.map((d) => ({
+    ...d,
+    Avg: Number(rateAvg.toFixed(2)),
+    UCL,
+    LCL,
   }));
 
   return (
     <>
       <div
-        className="qc-grid-2"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 2fr",
-          gap: 16,
-          marginBottom: 16,
-        }}
+        className="qc-grid-2 grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-[16px] mb-[16px]"
       >
-      <Card>
-        <CardHeader title="Grafik Defect" />
-        <div style={{ padding: 20, height: 260 }}>
-          {noData && !burningInQty ? (
-            <div
-              style={{
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                color: T.muted,
-                gap: 8,
-              }}
-            >
-              <div style={{ fontSize: 32 }}>📭</div>
-              <div style={{ fontSize: 13 }}>
-                Tidak ada data untuk tanggal ini
-              </div>
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={pieData}
-                  cx="50%"
-                  cy="45%"
-                  innerRadius={55}
-                  outerRadius={80}
-                  dataKey="value"
-                  paddingAngle={2}
-                >
-                  {pieData.map((_, i) => (
-                    <Cell key={i} fill={PIE_COLORS[i]} />
-                  ))}
-                </Pie>
-                <Tooltip contentStyle={ttStyle} formatter={(v) => [v, "Qty"]} />
-                <Legend
-                  iconType="circle"
-                  wrapperStyle={{ color: T.muted, fontSize: 11 }}
-                />
-              </PieChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-      </Card>
-
-      <Card>
-        <CardHeader
-          title="Grafik Defect (Reject) per Model"
-          actions={
-            <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-              <span style={{ fontSize: 10, color: T.blue, fontWeight: 700 }}>
-                LIVE SYNC 🟢
-              </span>
-              <span style={{ fontSize: 11, color: T.muted }}>
-                {selectedDate || "Semua data"} ({filtered.length})
-              </span>
-            </div>
-          }
-        />
-        <div style={{ padding: 20, height: 260 }}>
-          {noData ? (
-            <div
-              style={{
-                height: "100%",
-                display: "flex",
-                flexDirection: "column",
-                alignItems: "center",
-                justifyContent: "center",
-                color: T.muted,
-                gap: 8,
-              }}
-            >
-              <div style={{ fontSize: 32 }}>📊</div>
-              <div style={{ fontSize: 13 }}>
-                Tidak ada laporan untuk tanggal ini
-              </div>
-            </div>
-          ) : (
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart
-                data={barData}
-                margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
-                barGap={6}
+        <Card>
+          <CardHeader title="Grafik Defect" />
+          <div style={{ padding: 20, height: 260 }}>
+            {noData && !burningInQty ? (
+              <div
+                style={{
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: T.muted,
+                  gap: 8,
+                }}
               >
-                <CartesianGrid
-                  strokeDasharray="3 3"
-                  stroke="rgba(255,255,255,.04)"
-                  vertical={false}
-                />
-                <XAxis
-                  dataKey="name"
-                  tick={{
-                    fill: T.muted,
-                    fontSize: 9,
-                    fontWeight: 700,
-                    fontFamily: T.font,
-                  }}
-                  interval={0}
-                  hide={false}
-                />
-                <YAxis tick={{ fill: T.muted, fontSize: 10 }} />
-                <Tooltip
-                  contentStyle={ttStyle}
-                  cursor={{ fill: "rgba(255,255,255,.03)" }}
-                />
-                <Legend
-                  verticalAlign="top"
-                  height={36}
-                  wrapperStyle={{ fontSize: 12 }}
-                />
-                <Bar
-                  dataKey="fail"
-                  name="Unit Gagal (Reject)"
-                  radius={[4, 4, 0, 0]}
+                <div style={{ fontSize: 32 }}>📭</div>
+                <div style={{ fontSize: 13 }}>
+                  Tidak ada data untuk tanggal ini
+                </div>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <PieChart>
+                  <Pie
+                    data={pieData}
+                    cx="50%"
+                    cy="45%"
+                    innerRadius={55}
+                    outerRadius={80}
+                    dataKey="value"
+                    paddingAngle={2}
+                  >
+                    {pieData.map((_, i) => (
+                      <Cell key={i} fill={PIE_COLORS[i]} />
+                    ))}
+                  </Pie>
+                  <Tooltip
+                    contentStyle={ttStyle}
+                    formatter={(v) => [v, "Qty"]}
+                  />
+                  <Legend
+                    iconType="circle"
+                    wrapperStyle={{ color: T.muted, fontSize: 11 }}
+                  />
+                </PieChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </Card>
+
+        <Card>
+          <CardHeader
+            title="Grafik Defect (Reject) per Model"
+            actions={
+              <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                <span style={{ fontSize: 10, color: T.blue, fontWeight: 700 }}>
+                  LIVE SYNC 🟢
+                </span>
+                <span style={{ fontSize: 11, color: T.muted }}>
+                  {selectedDate || "Semua data"} ({filtered.length})
+                </span>
+              </div>
+            }
+          />
+          <div style={{ padding: 20, height: 260 }}>
+            {noData ? (
+              <div
+                style={{
+                  height: "100%",
+                  display: "flex",
+                  flexDirection: "column",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: T.muted,
+                  gap: 8,
+                }}
+              >
+                <div style={{ fontSize: 32 }}>📊</div>
+                <div style={{ fontSize: 13 }}>
+                  Tidak ada laporan untuk tanggal ini
+                </div>
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart
+                  data={barData}
+                  margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                  barGap={6}
                 >
-                  {barData.map((d, i) => (
-                    <Cell key={i} fill={d.fill} />
-                  ))}
-                </Bar>
-              </BarChart>
-            </ResponsiveContainer>
-          )}
-        </div>
-      </Card>
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="rgba(255,255,255,.04)"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="name"
+                    tick={{
+                      fill: T.muted,
+                      fontSize: 9,
+                      fontWeight: 700,
+                      fontFamily: T.font,
+                    }}
+                    interval={0}
+                    hide={false}
+                  />
+                  <YAxis tick={{ fill: T.muted, fontSize: 10 }} />
+                  <Tooltip
+                    contentStyle={ttStyle}
+                    cursor={{ fill: "rgba(255,255,255,.03)" }}
+                  />
+                  <Legend
+                    verticalAlign="top"
+                    height={36}
+                    wrapperStyle={{ fontSize: 12 }}
+                  />
+                  <Bar
+                    dataKey="fail"
+                    name="Unit Gagal (Reject)"
+                    radius={[4, 4, 0, 0]}
+                  >
+                    {barData.map((d, i) => (
+                      <Cell key={i} fill={d.fill} />
+                    ))}
+                  </Bar>
+                </BarChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </Card>
       </div>
 
       {/* PARETO & SPC TREND ROWS */}
       <div
-        className="qc-grid-2"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 16,
-          marginBottom: 18,
-        }}
+        className="qc-grid-2 grid grid-cols-1 lg:grid-cols-2 gap-[16px] mb-[18px]"
       >
         <Card>
           <CardHeader title="Pareto Analysis (80/20 Kategori Defect)" />
           <div style={{ padding: 20, height: 260 }}>
             {paretoData.length === 0 ? (
-              <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: T.muted, fontSize: 13 }}>Tidak ada data defect</div>
+              <div
+                style={{
+                  height: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: T.muted,
+                  fontSize: 13,
+                }}
+              >
+                Tidak ada data defect
+              </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={paretoData} margin={{ top: 10, right: 30, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.04)" vertical={false} />
-                  <XAxis dataKey="name" tick={{ fill: T.muted, fontSize: 10 }} interval={0} />
-                  <YAxis yAxisId="left" tick={{ fill: T.muted, fontSize: 10 }} />
-                  <YAxis yAxisId="right" orientation="right" tick={{ fill: T.muted, fontSize: 10 }} domain={[0, 100]} />
-                  <Tooltip contentStyle={ttStyle} cursor={{ fill: "rgba(255,255,255,.03)" }} />
+                <ComposedChart
+                  data={paretoData}
+                  margin={{ top: 10, right: 30, left: -20, bottom: 0 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="rgba(255,255,255,.04)"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="name"
+                    tick={{ fill: T.muted, fontSize: 10 }}
+                    interval={0}
+                  />
+                  <YAxis
+                    yAxisId="left"
+                    tick={{ fill: T.muted, fontSize: 10 }}
+                  />
+                  <YAxis
+                    yAxisId="right"
+                    orientation="right"
+                    tick={{ fill: T.muted, fontSize: 10 }}
+                    domain={[0, 100]}
+                  />
+                  <Tooltip
+                    contentStyle={ttStyle}
+                    cursor={{ fill: "rgba(255,255,255,.03)" }}
+                  />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Bar yAxisId="left" dataKey="value" name="Jumlah Defect" fill={T.blue} radius={[4, 4, 0, 0]} barSize={40} />
-                  <Line yAxisId="right" type="stepAfter" dataKey="cumPercent" name="Kumulatif %" stroke={T.yellow} strokeWidth={3} dot={{ r: 4, fill: T.surface }} />
-                  <ReferenceLine yAxisId="right" y={80} stroke={T.red} strokeDasharray="3 3" opacity={0.5} />
+                  <Bar
+                    yAxisId="left"
+                    dataKey="value"
+                    name="Jumlah Defect"
+                    fill={T.blue}
+                    radius={[4, 4, 0, 0]}
+                    barSize={40}
+                  />
+                  <Line
+                    yAxisId="right"
+                    type="stepAfter"
+                    dataKey="cumPercent"
+                    name="Kumulatif %"
+                    stroke={T.yellow}
+                    strokeWidth={3}
+                    dot={{ r: 4, fill: T.surface }}
+                  />
+                  <ReferenceLine
+                    yAxisId="right"
+                    y={80}
+                    stroke={T.red}
+                    strokeDasharray="3 3"
+                    opacity={0.5}
+                  />
                 </ComposedChart>
               </ResponsiveContainer>
             )}
@@ -710,19 +764,74 @@ export const DashboardCharts = ({ reports, selectedDate, burningInQty }) => {
           <CardHeader title="SPC Trend - Defect Rate (14 Hari Terakhir)" />
           <div style={{ padding: 20, height: 260 }}>
             {spcData.length === 0 ? (
-              <div style={{ height: "100%", display: "flex", alignItems: "center", justifyContent: "center", color: T.muted, fontSize: 13 }}>Tidak cukup data untuk trend</div>
+              <div
+                style={{
+                  height: "100%",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  color: T.muted,
+                  fontSize: 13,
+                }}
+              >
+                Tidak cukup data untuk trend
+              </div>
             ) : (
               <ResponsiveContainer width="100%" height="100%">
-                <ComposedChart data={spcData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,.04)" vertical={false} />
-                  <XAxis dataKey="date" tick={{ fill: T.muted, fontSize: 10 }} />
-                  <YAxis tick={{ fill: T.muted, fontSize: 10 }} domain={['auto', 'auto']} />
+                <ComposedChart
+                  data={spcData}
+                  margin={{ top: 10, right: 10, left: -20, bottom: 0 }}
+                >
+                  <CartesianGrid
+                    strokeDasharray="3 3"
+                    stroke="rgba(255,255,255,.04)"
+                    vertical={false}
+                  />
+                  <XAxis
+                    dataKey="date"
+                    tick={{ fill: T.muted, fontSize: 10 }}
+                  />
+                  <YAxis
+                    tick={{ fill: T.muted, fontSize: 10 }}
+                    domain={["auto", "auto"]}
+                  />
                   <Tooltip contentStyle={ttStyle} />
                   <Legend wrapperStyle={{ fontSize: 11 }} />
-                  <Line type="monotone" dataKey="rate" name="Defect Rate %" stroke={T.orange} strokeWidth={3} dot={{ r: 4, fill: T.surface }} />
-                  <Line type="stepAfter" dataKey="Avg" name="Average (CL)" stroke={T.green} strokeDasharray="5 5" strokeWidth={2} dot={false} />
-                  <Line type="stepAfter" dataKey="UCL" name="UCL (+3σ)" stroke={T.red} strokeDasharray="3 3" strokeWidth={1} dot={false} />
-                  <Line type="stepAfter" dataKey="LCL" name="LCL (-3σ)" stroke={T.red} strokeDasharray="3 3" strokeWidth={1} dot={false} />
+                  <Line
+                    type="monotone"
+                    dataKey="rate"
+                    name="Defect Rate %"
+                    stroke={T.orange}
+                    strokeWidth={3}
+                    dot={{ r: 4, fill: T.surface }}
+                  />
+                  <Line
+                    type="stepAfter"
+                    dataKey="Avg"
+                    name="Average (CL)"
+                    stroke={T.green}
+                    strokeDasharray="5 5"
+                    strokeWidth={2}
+                    dot={false}
+                  />
+                  <Line
+                    type="stepAfter"
+                    dataKey="UCL"
+                    name="UCL (+3σ)"
+                    stroke={T.red}
+                    strokeDasharray="3 3"
+                    strokeWidth={1}
+                    dot={false}
+                  />
+                  <Line
+                    type="stepAfter"
+                    dataKey="LCL"
+                    name="LCL (-3σ)"
+                    stroke={T.red}
+                    strokeDasharray="3 3"
+                    strokeWidth={1}
+                    dot={false}
+                  />
                 </ComposedChart>
               </ResponsiveContainer>
             )}
@@ -743,9 +852,10 @@ export const ReportTable = ({
   onDelete,
 }) => {
   const [page, setPage] = useState(1);
+  const [limit, setLimit] = useState(10);
   useEffect(() => {
     setPage(1);
-  }, [data.length]);
+  }, [data.length, limit]);
 
   if (!data.length)
     return (
@@ -754,7 +864,6 @@ export const ReportTable = ({
       </div>
     );
 
-  const limit = 10;
   const totalPages = Math.ceil(data.length / limit);
   const currentData = data.slice((page - 1) * limit, page * limit);
 
@@ -923,9 +1032,28 @@ export const ReportTable = ({
                     </td>
                   )}
                   <td style={{ padding: "12px 14px" }}>
-                    <div style={{ display: "flex", flexDirection: "column", gap: 4, alignItems: "flex-start" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        flexDirection: "column",
+                        gap: 4,
+                        alignItems: "flex-start",
+                      }}
+                    >
                       {r.approval_status === "pending" && (
-                         <span style={{ fontSize: 10, background: T.yellow, color: "#fff", padding: "2px 6px", borderRadius: 4, fontWeight: "bold", whiteSpace: "nowrap" }}>⏳ PENDING</span>
+                        <span
+                          style={{
+                            fontSize: 10,
+                            background: T.yellow,
+                            color: "#fff",
+                            padding: "2px 6px",
+                            borderRadius: 4,
+                            fontWeight: "bold",
+                            whiteSpace: "nowrap",
+                          }}
+                        >
+                          ⏳ PENDING
+                        </span>
                       )}
                       <StatusBadge status={r.overall_status} />
                     </div>
@@ -965,36 +1093,86 @@ export const ReportTable = ({
           </tbody>
         </table>
       </div>
-      {totalPages > 1 && (
+      {data.length > 10 && (
         <div
+          className="flex flex-col sm:flex-row justify-between items-center px-[16px] py-[12px] gap-4"
           style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            padding: "12px 16px",
             borderTop: `1px solid ${T.border}`,
             background: T.surface,
           }}
         >
-          <span style={{ fontSize: 12, color: T.muted }}>
-            Halaman {page} dari {totalPages}
-          </span>
-          <div style={{ display: "flex", gap: 8 }}>
+          <div className="flex items-center gap-2">
+            <span style={{ fontSize: 13, color: T.muted }}>Baris per halaman:</span>
+            <select
+              value={limit}
+              onChange={(e) => setLimit(Number(e.target.value))}
+              style={{
+                background: "transparent",
+                border: "none",
+                color: T.text,
+                fontSize: 13,
+                outline: "none",
+                cursor: "pointer",
+                fontWeight: 600,
+              }}
+            >
+              <option value={10}>10</option>
+              <option value={20}>20</option>
+              <option value={30}>30</option>
+              <option value={50}>50</option>
+            </select>
+          </div>
+          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
             <Btn
               variant="ghost"
               size="sm"
               onClick={() => setPage((p) => Math.max(1, p - 1))}
               disabled={page === 1}
+              style={{ padding: "4px 8px" }}
             >
-              ← Prev
+              ←
             </Btn>
+            {(() => {
+              const total = totalPages;
+              const current = page;
+              let pages = [];
+              if (total <= 5) {
+                pages = Array.from({ length: total }, (_, i) => i + 1);
+              } else if (current <= 3) {
+                pages = [1, 2, 3, 4, "...", total];
+              } else if (current >= total - 2) {
+                pages = [1, "...", total - 3, total - 2, total - 1, total];
+              } else {
+                pages = [1, "...", current - 1, current, current + 1, "...", total];
+              }
+              return pages.map((p, i) => (
+                <button
+                  key={i}
+                  disabled={p === "..."}
+                  onClick={() => p !== "..." && setPage(p)}
+                  style={{
+                    padding: "4px 10px",
+                    borderRadius: T.r,
+                    border: p !== "..." && p === page ? `1px solid ${T.blue}` : "none",
+                    background: p === page ? "rgba(47,129,247,.15)" : "transparent",
+                    color: p === page ? T.blue : p === "..." ? T.muted : T.text,
+                    fontSize: 13,
+                    fontWeight: p === page ? 700 : 500,
+                    cursor: p === "..." ? "default" : "pointer",
+                  }}
+                >
+                  {p}
+                </button>
+              ));
+            })()}
             <Btn
               variant="ghost"
               size="sm"
               onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
               disabled={page === totalPages}
+              style={{ padding: "4px 8px" }}
             >
-              Next →
+              →
             </Btn>
           </div>
         </div>
@@ -1010,7 +1188,10 @@ export const MatrixOrganism = ({ reports }) => {
     acc[p.model].push({ name: p.color, pid: Number(id) });
     return acc;
   }, {});
-  const groups = Object.entries(grouped).map(([model, variants]) => ({ model, variants }));
+  const groups = Object.entries(grouped).map(([model, variants]) => ({
+    model,
+    variants,
+  }));
   const stackedData = [1, 2, 3, 4].map((pid) => {
     const rs = reports.filter((r) => r.product_id === pid);
     const prod = PRODUCTS[pid];
@@ -1028,13 +1209,7 @@ export const MatrixOrganism = ({ reports }) => {
   return (
     <>
       <div
-        className="qc-grid-2"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 16,
-          marginBottom: 18,
-        }}
+        className="qc-grid-2 grid grid-cols-1 lg:grid-cols-2 gap-[16px] mb-[18px]"
       >
         {groups.map((g) => (
           <Card key={g.model}>
@@ -1085,13 +1260,7 @@ export const MatrixOrganism = ({ reports }) => {
                       </span>
                     </div>
                     <div
-                      className="qc-kpi-grid"
-                      style={{
-                        display: "grid",
-                        gridTemplateColumns: "repeat(3,1fr)",
-                        gap: 8,
-                        marginBottom: 10,
-                      }}
+                      className="qc-kpi-grid grid grid-cols-1 sm:grid-cols-3 gap-[8px] mb-[10px]"
                     >
                       <StatMini label="Total Reject" value={f} color={T.red} />
                       <StatMini
@@ -1163,8 +1332,7 @@ export const UserGrid = ({
     );
   return (
     <div
-      className="qc-grid-3"
-      style={{ display: "grid", gridTemplateColumns: "repeat(3,1fr)", gap: 14 }}
+      className="qc-grid-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[14px]"
     >
       {users.map((u) => {
         const isMe = currentUser && u.id === currentUser.id;
@@ -1405,22 +1573,23 @@ export const ReportFormOrganism = ({
     if (!open) return;
     if (editReport) {
       const r = editReport;
+      const base = r.id ? r : empty();
       setForm({
-        product_id: r.product_id,
-        batch_no: r.batch_no,
-        production_date: r.production_date,
-        inspection_date: r.inspection_date,
-        qty_burning_in: r.qty_burning_in || "",
-        qty_produced: r.qty_produced || "",
-        qty_inspected: r.qty_inspected || "",
-        qty_pass: r.qty_pass || "",
-        qty_fail: r.qty_fail || "",
-        qty_rework: r.qty_rework || "",
-        defect_cat: r.defect_cat || "",
-        defect_loc: r.defect_loc || "",
-        station: r.station || "",
-        overall_status: r.overall_status,
-        notes: r.notes || "",
+        product_id: r.product_id ?? base.product_id,
+        batch_no: r.batch_no ?? base.batch_no,
+        production_date: r.production_date ?? base.production_date,
+        inspection_date: r.inspection_date ?? base.inspection_date,
+        qty_burning_in: r.qty_burning_in ?? base.qty_burning_in,
+        qty_produced: r.qty_produced ?? base.qty_produced,
+        qty_inspected: r.qty_inspected ?? base.qty_inspected,
+        qty_pass: r.qty_pass ?? base.qty_pass,
+        qty_fail: r.qty_fail ?? base.qty_fail,
+        qty_rework: r.qty_rework ?? base.qty_rework,
+        defect_cat: r.defect_cat ?? base.defect_cat,
+        defect_loc: r.defect_loc ?? base.defect_loc,
+        station: r.station ?? base.station,
+        overall_status: r.overall_status ?? base.overall_status,
+        notes: r.notes ?? base.notes,
       });
       setSnList(r.serial_numbers || []);
       setCpState(r.checkpoints || mkCp());
@@ -1443,11 +1612,8 @@ export const ReportFormOrganism = ({
   const addSN = () => {
     const val = snInput.trim().toUpperCase();
     if (!val) return;
-    if (snList.includes(val)) {
-      showToast("SN sudah ada!", "err");
-      return;
-    }
-    setSnList((s) => [...s, val]);
+    // 1 Laporan hanya untuk 1 SN: Langsung ganti list dengan nilai baru
+    setSnList([val]);
     setSnInput("");
   };
 
@@ -1470,19 +1636,28 @@ export const ReportFormOrganism = ({
       showToast("Produk dan Batch wajib diisi!", "err");
       return;
     }
-    
+
+    // Fix: SN must be mandatory
+    if (snList.length === 0) {
+      showToast("Wajib memasukkan minimal 1 Serial Number!", "err");
+      return;
+    }
+
     setIsUploading(true);
     try {
+      const prod = PRODUCTS[form.product_id];
+      if (!prod) throw new Error("Produk tidak ditemukan");
+
       const qty_fail = snList.length;
       const qty_p = Number(form.qty_pass) || 0;
-      const qty_inspected = qty_p + qty_fail; // Red 1.4: Force qty_inspected = pass + fail
+      const qty_inspected = qty_p + qty_fail;
       const qty_pass = qty_p;
-      const defect_rate = qty_inspected > 0 ? +((qty_fail / qty_inspected) * 100).toFixed(2) : 0;
+      const defect_rate =
+        qty_inspected > 0 ? +((qty_fail / qty_inspected) * 100).toFixed(2) : 0;
 
-      // Ensure we have an ID for storage path
       const reportId = editReport ? editReport.id : `new_${Date.now()}`;
 
-      // Upload images to Firebase Storage
+      // Upload images to Firebase Storage (returns empty array if imgList is empty)
       const imageUrls = await uploadReportImages(imgList, reportId);
 
       onSave({
@@ -1511,8 +1686,7 @@ export const ReportFormOrganism = ({
         images: imageUrls,
         checkpoints: cpState.map((c) => ({ ...c })),
       });
-    } catch (e) {
-      showToast("Gagal upload gambar / simpan laporan!", "err");
+      showToast(e.message || "Gagal menyimpan laporan!", "err");
       console.error(e);
     } finally {
       setIsUploading(false);
@@ -1547,7 +1721,7 @@ export const ReportFormOrganism = ({
       }
     >
       <SectionHeader icon="📟" first>
-        Serial Number Unit Reject
+        Serial Number Unit Reject *
       </SectionHeader>
       <div
         style={{
@@ -1567,13 +1741,14 @@ export const ReportFormOrganism = ({
             marginBottom: 8,
           }}
         >
-          Scan atau ketik SN unit REJECT
+          Wajib Input SN
         </div>
         <div style={{ display: "flex", gap: 8 }}>
           <TextInput
             value={snInput}
             onChange={setSnInput}
-            placeholder="Scan barcode / ketik SN lalu Enter…"
+            onKeyDown={(e) => e.key === "Enter" && addSN()}
+            placeholder="Scan barcode / ketik SN..."
             style={{ flex: 1 }}
           />
           <Btn variant="primary" size="sm" onClick={addSN}>
@@ -1594,9 +1769,12 @@ export const ReportFormOrganism = ({
           </div>
         )}
         <div style={{ fontSize: 11, color: T.muted, marginTop: 6 }}>
-          Total:{" "}
-          <span style={{ fontWeight: 700, color: T.red }}>{snList.length}</span>{" "}
-          SN
+          Status:{" "}
+          <span
+            style={{ fontWeight: 700, color: snList.length ? T.green : T.red }}
+          >
+            {snList.length ? "SN Terinput" : "Menunggu SN"}
+          </span>
         </div>
       </div>
 
@@ -1682,13 +1860,7 @@ export const ReportFormOrganism = ({
 
       <SectionHeader icon="📦">Informasi Produk & Batch</SectionHeader>
       <div
-        className="qc-grid-2"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "1fr 1fr",
-          gap: 14,
-          marginBottom: 20,
-        }}
+        className="qc-grid-2 grid grid-cols-1 md:grid-cols-2 gap-[14px] mb-[20px]"
       >
         <div>
           <FieldLabel>Produk & Warna *</FieldLabel>
@@ -1735,13 +1907,7 @@ export const ReportFormOrganism = ({
 
       <SectionHeader icon="🔢">Kuantitas Unit</SectionHeader>
       <div
-        className="qc-grid-2"
-        style={{
-          display: "grid",
-          gridTemplateColumns: "repeat(4, 1fr)",
-          gap: 12,
-          marginBottom: 20,
-        }}
+        className="qc-grid-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[12px] mb-[20px]"
       >
         <div>
           <FieldLabel>Barang Masuk</FieldLabel>
@@ -1772,16 +1938,25 @@ export const ReportFormOrganism = ({
         </div>
         <div>
           <FieldLabel>Jumlah Diperiksa</FieldLabel>
-          <div style={{ background: T.surface, padding: '9px 12px', borderRadius: T.r, border: `1px solid ${T.border}`, fontSize: 13, fontWeight: 700, color: T.blue }}>
-             {Number(form.qty_pass || 0) + snList.length}
+          <div
+            style={{
+              background: T.surface,
+              padding: "9px 12px",
+              borderRadius: T.r,
+              border: `1px solid ${T.border}`,
+              fontSize: 13,
+              fontWeight: 700,
+              color: T.blue,
+            }}
+          >
+            {Number(form.qty_pass || 0) + snList.length}
           </div>
         </div>
       </div>
 
       <SectionHeader icon="🔎">Jenis Defect</SectionHeader>
       <div
-        className="qc-grid-2"
-        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}
+        className="qc-grid-2 grid grid-cols-1 md:grid-cols-2 gap-[14px]"
       >
         <div>
           <FieldLabel>Kategori Defect</FieldLabel>
@@ -1838,7 +2013,15 @@ export const ReportFormOrganism = ({
 };
 
 /** DetailModal — read-only report detail */
-export const DetailModal = ({ open, onClose, report, canEdit, onEdit, isAdmin, onApprove }) => {
+export const DetailModal = ({
+  open,
+  onClose,
+  report,
+  canEdit,
+  onEdit,
+  isAdmin,
+  onApprove,
+}) => {
   const [previewUrl, setPreviewUrl] = useState(null);
 
   if (!report) return null;
@@ -1854,7 +2037,18 @@ export const DetailModal = ({ open, onClose, report, canEdit, onEdit, isAdmin, o
         headerExtra={
           <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
             {report.approval_status === "pending" && (
-              <span style={{ fontSize: 11, background: T.yellow, color: "#fff", padding: "3px 8px", borderRadius: 4, fontWeight: "bold" }}>⏳ PENDING APPROVAL</span>
+              <span
+                style={{
+                  fontSize: 11,
+                  background: T.yellow,
+                  color: "#fff",
+                  padding: "3px 8px",
+                  borderRadius: 4,
+                  fontWeight: "bold",
+                }}
+              >
+                ⏳ PENDING APPROVAL
+              </span>
             )}
             <StatusBadge status={report.overall_status} />
           </div>
@@ -1868,10 +2062,7 @@ export const DetailModal = ({ open, onClose, report, canEdit, onEdit, isAdmin, o
               Tutup
             </Btn>
             {isAdmin && report.approval_status === "pending" && onApprove && (
-              <Btn
-                variant="success"
-                onClick={() => onApprove(report.id)}
-              >
+              <Btn variant="success" onClick={() => onApprove(report.id)}>
                 ✅ Approve
               </Btn>
             )}
@@ -1891,12 +2082,7 @@ export const DetailModal = ({ open, onClose, report, canEdit, onEdit, isAdmin, o
       >
         {/* KPIs & Summary */}
         <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 280px",
-            gap: 16,
-            marginBottom: 20,
-          }}
+          className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-[16px] mb-[20px]"
         >
           <div
             style={{
@@ -1904,10 +2090,8 @@ export const DetailModal = ({ open, onClose, report, canEdit, onEdit, isAdmin, o
               border: `1px solid ${T.border}`,
               borderRadius: T.r2,
               padding: 16,
-              display: "grid",
-              gridTemplateColumns: "1fr 1fr",
-              gap: 12,
             }}
+            className="grid grid-cols-1 sm:grid-cols-2 gap-[12px]"
           >
             {[
               { l: "Batch No", v: report.batch_no, icon: "📦" },
@@ -2044,12 +2228,7 @@ export const DetailModal = ({ open, onClose, report, canEdit, onEdit, isAdmin, o
 
         {/* Defect Details */}
         <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1fr 1fr",
-            gap: 16,
-            marginBottom: 20,
-          }}
+          className="grid grid-cols-1 lg:grid-cols-2 gap-[16px] mb-[20px]"
         >
           <div
             style={{
@@ -2326,14 +2505,14 @@ export const UserFormOrganism = ({
     >
       <SectionHeader first>Informasi Akun</SectionHeader>
       <div
-        className="qc-grid-2"
-        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}
+        className="qc-grid-2 grid grid-cols-1 sm:grid-cols-2 gap-[14px]"
       >
         <div>
           <FieldLabel>Nama Lengkap *</FieldLabel>
           <TextInput
             value={form.name}
             onChange={(v) => setF("name", v)}
+            onKeyDown={(e) => e.key === "Enter" && handleSave()}
             placeholder="Nama lengkap…"
           />
         </div>
@@ -2342,6 +2521,7 @@ export const UserFormOrganism = ({
           <TextInput
             value={form.username}
             onChange={(v) => setF("username", v)}
+            onKeyDown={(e) => e.key === "Enter" && handleSave()}
             placeholder="tanpa spasi…"
           />
         </div>
@@ -2367,8 +2547,7 @@ export const UserFormOrganism = ({
           : "Password"}
       </SectionHeader>
       <div
-        className="qc-grid-2"
-        style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: 14 }}
+        className="qc-grid-2 grid grid-cols-1 sm:grid-cols-2 gap-[14px]"
       >
         <div>
           <FieldLabel>Password *</FieldLabel>
@@ -2376,6 +2555,7 @@ export const UserFormOrganism = ({
             type="password"
             value={form.password}
             onChange={(v) => setF("password", v)}
+            onKeyDown={(e) => e.key === "Enter" && handleSave()}
             placeholder="Min 8 char huruf & angka…"
           />
         </div>
@@ -2385,6 +2565,7 @@ export const UserFormOrganism = ({
             type="password"
             value={form.password2}
             onChange={(v) => setF("password2", v)}
+            onKeyDown={(e) => e.key === "Enter" && handleSave()}
             placeholder="Ulangi password…"
           />
         </div>
@@ -2462,6 +2643,7 @@ export const ChangePwOrganism = ({
           type="password"
           value={pw}
           onChange={setPw}
+          onKeyDown={(e) => e.key === "Enter" && handle()}
           placeholder="Min 8 char huruf & angka…"
         />
       </div>
@@ -2471,6 +2653,7 @@ export const ChangePwOrganism = ({
           type="password"
           value={conf}
           onChange={setConf}
+          onKeyDown={(e) => e.key === "Enter" && handle()}
           placeholder="Ulangi password baru…"
         />
       </div>

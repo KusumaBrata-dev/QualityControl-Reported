@@ -1,5 +1,6 @@
 import React, { useState } from "react";
-import { T, genNo, DEFECT_CATS } from "../qcConstants";
+import { T, genNo } from "../qcConstants";
+import { DEFECT_CATS } from "../../../firebase";
 import {
   Btn,
   TextInput,
@@ -27,6 +28,7 @@ export const DashboardTemplate = ({
   onEdit,
   onDelete,
   onNewReport,
+  onOpenScanner,
   selectedDate,
   onDateChange,
 }) => {
@@ -34,9 +36,9 @@ export const DashboardTemplate = ({
   const [selectedCategory, setSelectedCategory] = React.useState("");
 
   const serverQty = dailyProd[selectedDate] || 0;
-  
+
   const categoryFilteredReports = selectedCategory
-    ? reports.filter(r => r.defect_cat === selectedCategory)
+    ? reports.filter((r) => r.defect_cat === selectedCategory)
     : reports;
 
   const todayReports = categoryFilteredReports.filter((r) => {
@@ -129,9 +131,14 @@ export const DashboardTemplate = ({
           title={`Laporan QC Terbaru — ${selectedDate || "Semua Tanggal"}`}
           actions={
             canEdit && (
-              <Btn variant="primary" size="sm" onClick={onNewReport}>
-                + Laporan Baru
-              </Btn>
+              <div style={{ display: "flex", gap: 8 }}>
+                <Btn variant="blue_outline" size="sm" onClick={onOpenScanner}>
+                  📷 Scan Barcode
+                </Btn>
+                <Btn variant="primary" size="sm" onClick={onNewReport}>
+                  + Laporan Baru
+                </Btn>
+              </div>
             )
           }
         />
@@ -190,6 +197,7 @@ export const ReportsTemplate = ({
   onEdit,
   onDelete,
   onNewReport,
+  onOpenScanner,
   date,
   onDateChange,
   onExport,
@@ -244,13 +252,7 @@ export const ReportsTemplate = ({
         }}
       >
         <div
-          className="qc-grid-auto"
-          style={{
-            display: "grid",
-            gridTemplateColumns: "2fr 1.2fr 1.2fr 1.2fr 1.2fr auto",
-            gap: 10,
-            alignItems: "end",
-          }}
+          className="qc-grid-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[2fr_1.2fr_1.2fr_1.2fr_1.2fr_auto] gap-[10px] items-end"
         >
           <FilterField label="🔍 Cari">
             <TextInput
@@ -332,9 +334,14 @@ export const ReportsTemplate = ({
                 <Btn
                   variant="blue_outline"
                   size="sm"
-                  onClick={() => document.getElementById("excel-import")?.click()}
+                  onClick={() =>
+                    document.getElementById("excel-import")?.click()
+                  }
                 >
                   📤 Import Excel
+                </Btn>
+                <Btn variant="blue_outline" size="sm" onClick={onOpenScanner}>
+                  📷 Scan Barcode
                 </Btn>
                 <Btn variant="primary" size="sm" onClick={onNewReport}>
                   + Laporan Baru

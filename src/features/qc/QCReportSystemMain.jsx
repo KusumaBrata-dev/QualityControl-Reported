@@ -8,6 +8,7 @@ import {
   UserFormOrganism,
   ChangePwOrganism,
 } from "./components/Organisms";
+import { BarcodeScannerOrganism } from "./components/BarcodeScannerOrganism";
 import {
   DashboardTemplate,
   ReportsTemplate,
@@ -87,6 +88,7 @@ export default function QCReportSystemMain() {
   const toastTimer = useRef(null);
 
   // Modal state
+  const [scannerOpen, setScannerOpen] = useState(false);
   const [formOpen, setFormOpen] = useState(false);
   const [editReport, setEditReport] = useState(null);
   const [detailOpen, setDetailOpen] = useState(false);
@@ -367,8 +369,8 @@ export default function QCReportSystemMain() {
   };
 
   // ── Reports CRUD ──────────────────────────────────
-  const handleNewReport = () => {
-    setEditReport(null);
+  const handleNewReport = (scannedSn = null) => {
+    setEditReport(typeof scannedSn === 'string' ? { serial_numbers: [scannedSn] } : null);
     setFormOpen(true);
   };
   const handleEditReport = (id) => {
@@ -611,6 +613,7 @@ export default function QCReportSystemMain() {
         canEdit={canEdit}
         isAdmin={isAdmin}
         onNewReport={handleNewReport}
+        onOpenScanner={() => setScannerOpen(true)}
         onLogout={handleLogout}
       />
 
@@ -629,6 +632,7 @@ export default function QCReportSystemMain() {
               onEdit={handleEditReport}
               onDelete={handleDeleteReport}
               onNewReport={handleNewReport}
+              onOpenScanner={() => setScannerOpen(true)}
               selectedDate={selectedDate}
               onDateChange={setSelectedDate}
             />
@@ -641,6 +645,7 @@ export default function QCReportSystemMain() {
               onEdit={handleEditReport}
               onDelete={handleDeleteReport}
               onNewReport={handleNewReport}
+              onOpenScanner={() => setScannerOpen(true)}
               date={selectedDate}
               onDateChange={setSelectedDate}
               onExport={handleExportReports}
@@ -668,6 +673,14 @@ export default function QCReportSystemMain() {
       </div>
 
       {/* ── Modals ── */}
+      <BarcodeScannerOrganism
+        open={scannerOpen}
+        onClose={() => setScannerOpen(false)}
+        onScanSuccess={(sn) => {
+          setScannerOpen(false);
+          handleNewReport(sn);
+        }}
+      />
       <ReportFormOrganism
         open={formOpen}
         onClose={() => setFormOpen(false)}
