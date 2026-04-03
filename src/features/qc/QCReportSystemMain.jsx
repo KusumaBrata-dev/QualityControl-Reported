@@ -2,7 +2,6 @@ import React, { useState, useEffect, useCallback, useRef } from "react";
 import { T, SEED_REPORTS, SEED_USERS } from "./qcConstants";
 import {
   LoginOrganism,
-  NavbarOrganism,
   ReportFormOrganism,
   DetailModal,
   UserFormOrganism,
@@ -21,6 +20,7 @@ import {
   ErrorBoundary,
   ConfirmModal,
 } from "./components/Molecules";
+import Footer from "../../components/Footer";
 import { exportToExcel } from "./utils/exportUtils";
 import { parseExcelImport } from "./utils/importUtils";
 import { uploadUserAvatar } from "./utils/storageUtils";
