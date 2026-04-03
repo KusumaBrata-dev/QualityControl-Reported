@@ -563,110 +563,59 @@ export const ReportsTemplate = ({
           <strong style={{ color: T.text }}>{reports.length}</strong> laporan
         </div>
 
-        {/* ── Action buttons — wraps on mobile ── */}
+        {/* ── Action buttons ── */}
         <div style={{
           display: "flex",
           flexWrap: "wrap",
+          alignItems: "center",
           gap: 6,
           marginTop: 8,
         }}>
-          {/* hidden file input */}
+          {/* hidden import file input */}
           {canEdit && (
             <input
-              type="file"
-              accept=".xlsx"
-              style={{ display: "none" }}
-              id="excel-import"
+              type="file" accept=".xlsx"
+              style={{ display: "none" }} id="excel-import"
               onChange={(e) => {
-                if (e.target.files?.length > 0) {
-                  onImport(e.target.files[0]);
-                  e.target.value = "";
-                }
+                if (e.target.files?.length > 0) { onImport(e.target.files[0]); e.target.value = ""; }
               }}
             />
           )}
 
           {/* Export */}
-          <button
-            onClick={() => onExport(filtered)}
-            style={{
-              display: "flex", alignItems: "center", gap: 5,
-              padding: "7px 11px",
-              background: "transparent",
-              border: `1px solid ${T.border}`,
-              borderRadius: 8,
-              color: T.blue,
-              fontSize: 12,
-              fontWeight: 600,
-              cursor: "pointer",
-              fontFamily: T.font,
-              whiteSpace: "nowrap",
-            }}
-          >
-            📥 <span>Export</span>
+          <button onClick={() => onExport(filtered)} style={{
+            display: "flex", alignItems: "center", gap: 4,
+            padding: "8px 12px", background: "transparent",
+            border: `1px solid ${T.border}`, borderRadius: 8,
+            color: T.blue, fontSize: 12, fontWeight: 600,
+            cursor: "pointer", fontFamily: T.font, whiteSpace: "nowrap",
+          }}>
+            📥 Export
           </button>
 
           {canEdit && (
             <>
               {/* Import */}
-              <button
-                onClick={() => document.getElementById("excel-import")?.click()}
-                style={{
-                  display: "flex", alignItems: "center", gap: 5,
-                  padding: "7px 11px",
-                  background: "transparent",
-                  border: `1px solid ${T.border}`,
-                  borderRadius: 8,
-                  color: T.blue,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  fontFamily: T.font,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                📤 <span>Import</span>
+              <button onClick={() => document.getElementById("excel-import")?.click()} style={{
+                display: "flex", alignItems: "center", gap: 4,
+                padding: "8px 12px", background: "transparent",
+                border: `1px solid ${T.border}`, borderRadius: 8,
+                color: T.blue, fontSize: 12, fontWeight: 600,
+                cursor: "pointer", fontFamily: T.font, whiteSpace: "nowrap",
+              }}>
+                📤 Import
               </button>
 
-              {/* Scan */}
-              <button
-                onClick={onOpenScanner}
-                style={{
-                  display: "flex", alignItems: "center", gap: 5,
-                  padding: "7px 11px",
-                  background: "transparent",
-                  border: `1px solid ${T.border}`,
-                  borderRadius: 8,
-                  color: T.blue,
-                  fontSize: 12,
-                  fontWeight: 600,
-                  cursor: "pointer",
-                  fontFamily: T.font,
-                  whiteSpace: "nowrap",
-                }}
-              >
-                📷 <span>Scan</span>
-              </button>
-
-              {/* + Baru — full width on very small screens */}
-              <button
-                onClick={onNewReport}
-                style={{
-                  display: "flex", alignItems: "center", gap: 5,
-                  padding: "7px 14px",
-                  background: `linear-gradient(135deg, ${T.blueD}, ${T.blue})`,
-                  border: "none",
-                  borderRadius: 8,
-                  color: "#fff",
-                  fontSize: 12,
-                  fontWeight: 700,
-                  cursor: "pointer",
-                  fontFamily: T.font,
-                  whiteSpace: "nowrap",
-                  boxShadow: "0 2px 8px rgba(47,129,247,0.35)",
-                  marginLeft: "auto",
-                }}
-              >
+              {/* + Laporan Baru */}
+              <button onClick={onNewReport} style={{
+                display: "flex", alignItems: "center", gap: 4,
+                padding: "8px 14px", marginLeft: "auto",
+                background: `linear-gradient(135deg, ${T.blueD}, ${T.blue})`,
+                border: "none", borderRadius: 8,
+                color: "#fff", fontSize: 12, fontWeight: 700,
+                cursor: "pointer", fontFamily: T.font, whiteSpace: "nowrap",
+                boxShadow: "0 2px 8px rgba(47,129,247,0.35)",
+              }}>
                 + Laporan Baru
               </button>
             </>

@@ -220,12 +220,24 @@ export default function QCReportSystemMain() {
         .qc-root tbody tr:hover td { background: ${T.surface2}; }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
 
+        /* ── Anti-zoom: iOS forces zoom when input font-size < 16px ── */
+        .qc-root input, .qc-root select, .qc-root textarea {
+          font-size: 16px !important;
+          touch-action: manipulation;
+        }
+        /* Prevent double-tap zoom on buttons via touch-action */
+        .qc-root button, .qc-root a { touch-action: manipulation; }
+        /* Prevent overscroll bounce on iOS */
+        html, body { overscroll-behavior: none; -webkit-overflow-scrolling: touch; }
+        /* Safe area for iPhone X notch bottom */
+        .qc-bottom-nav { padding-bottom: env(safe-area-inset-bottom) !important; }
+
         /* Responsive CSS */
         @media (max-width: 900px) {
           .qc-nav-inner { height: auto !important; flex-wrap: wrap; justify-content: space-between; padding: 12px 16px !important; gap: 12px; }
           .qc-nav-tabs { order: 3; width: 100%; justify-content: center; margin-top: 4px; }
           .qc-nav-right { order: 2; flex-wrap: wrap; justify-content: flex-end; }
-          .qc-clock { display: none !important; } /* Hide clock on mobile to save space */
+          .qc-clock { display: none !important; }
         }
         @media (max-width: 768px) {
           .qc-grid-2, .qc-grid-3 { grid-template-columns: 1fr !important; }
@@ -233,13 +245,18 @@ export default function QCReportSystemMain() {
           .qc-grid-5 { grid-template-columns: repeat(2, 1fr) !important; }
           .qc-grid-auto { grid-template-columns: 1fr !important; }
           .qc-flex-col-mobile { flex-direction: column !important; align-items: stretch !important; gap: 12px; }
-          .qc-p-24 { padding: 16px !important; }
+          .qc-p-24 { padding: 12px !important; }
+          /* KPI cards: force 2-col always on mobile */
+          .qc-kpi-mobile-grid { grid-template-columns: repeat(2, 1fr) !important; gap: 8px !important; }
+          /* Shrink KPI card text on very small cards */
+          .qc-kpi-mobile-grid > div { padding: 10px 9px !important; }
         }
         @media (max-width: 480px) {
-          .qc-kpi-grid, .qc-grid-5 { grid-template-columns: 1fr !important; }
           .qc-login-card { padding: 32px 24px !important; width: auto !important; margin: 16px !important; }
           .qc-mobile-form { max-width: 100% !important; max-height: 100vh !important; border-radius: 0 !important; border: 0 !important; margin: 0 !important; }
           .qc-mobile-form > div { border-radius: 0 !important; }
+          /* Even smaller phone: number stays readable */
+          .qc-kpi-mobile-grid > div { padding: 9px 8px !important; }
         }
       `;
     document.head.appendChild(el);
