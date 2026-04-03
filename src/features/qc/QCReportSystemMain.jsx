@@ -9,6 +9,7 @@ import {
   ChangePwOrganism,
 } from "./components/Organisms";
 import { BarcodeScannerOrganism } from "./components/BarcodeScannerOrganism";
+import { GlobalTopBar, MobileBottomNav, MobileFAB, GlobalSidebar } from "./components/MobileOrganisms";
 import {
   DashboardTemplate,
   ReportsTemplate,
@@ -22,6 +23,7 @@ import {
 } from "./components/Molecules";
 import { exportToExcel } from "./utils/exportUtils";
 import { parseExcelImport } from "./utils/importUtils";
+import { uploadUserAvatar } from "./utils/storageUtils";
 import { db } from "../../firebase";
 import {
   collection,
@@ -59,6 +61,11 @@ export default function QCReportSystemMain() {
     .toISOString()
     .slice(0, 10);
   const [selectedDate, setSelectedDate] = useState(todayStr);
+  const [isDark, setIsDark] = useState(false);
+  const [activeModel, setActiveModel] = useState("all");
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+
+  const handleToggleTheme = () => setIsDark((d) => !d);
 
   const [tab, setTab] = useState(() => {
     const saved = localStorage.getItem("qc_active_tab") || "dashboard";
@@ -484,17 +491,28 @@ export default function QCReportSystemMain() {
     const id = isEdit
       ? data.id
       : Math.max(0, ...users.map((u) => Number(u.id) || 0)) + 1;
+      
     try {
+      let avatarUrl = data.avatar || null;
+      if (data.avatarFile) {
+        showToast("Meng-upload Avatar...", "info");
+        const url = await uploadUserAvatar(data.avatarFile, String(id));
+        if (url) avatarUrl = url;
+      }
+      
+      const payload = { ...data, id };
+      delete payload.avatarFile;
+      if (avatarUrl) payload.avatar = avatarUrl;
       await setDoc(
         doc(db, "users", String(id)),
-        { ...data, id },
+        payload,
         { merge: true },
       );
       logAction(isEdit ? "UPDATE_USER" : "CREATE_USER", id, {
         targetName: data.name,
       });
       if (currentUser?.id === id) {
-        const { password, ...safe } = { ...data, id };
+        const { password, avatarFile, ...safe } = payload;
         setCurrentUser(safe);
         localStorage.setItem("qc_auth_user", JSON.stringify(safe));
       }
@@ -606,15 +624,27 @@ export default function QCReportSystemMain() {
         minHeight: "100vh",
       }}
     >
-      <NavbarOrganism
+      <GlobalTopBar
+        onOpenSidebar={() => setSidebarOpen(true)}
         user={currentUser}
+        isDark={isDark}
+        onToggleTheme={handleToggleTheme}
+        activeModel={activeModel}
+        onChangeModel={setActiveModel}
+      />
+
+      <GlobalSidebar
+        open={sidebarOpen}
+        onClose={() => setSidebarOpen(false)}
+        user={currentUser}
+        isDark={isDark}
+        onToggleTheme={handleToggleTheme}
+        onLogout={handleLogout}
         tab={tab}
         onTabChange={handleTab}
-        canEdit={canEdit}
+        activeModel={activeModel}
+        onChangeModel={setActiveModel}
         isAdmin={isAdmin}
-        onNewReport={handleNewReport}
-        onOpenScanner={() => setScannerOpen(true)}
-        onLogout={handleLogout}
       />
 
       <div
@@ -722,6 +752,21 @@ export default function QCReportSystemMain() {
 
       {/* ── Toast ── */}
       <ToastNotif toast={toastState} />
+
+      <MobileFAB
+        onClick={() => setScannerOpen(true)}
+        visible={canEdit}
+        isDark={isDark}
+      />
+      
+      <MobileBottomNav
+        tab={tab}
+        onTabChange={handleTab}
+        isAdmin={isAdmin}
+        isDark={isDark}
+      />
+      
+      <Footer isDark={isDark} />
     </div>
   );
 }

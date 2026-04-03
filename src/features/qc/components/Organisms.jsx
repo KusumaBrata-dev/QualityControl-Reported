@@ -2421,6 +2421,8 @@ export const UserFormOrganism = ({
     active: "1",
     password: "",
     password2: "",
+    avatarFile: null,
+    avatarPreview: null,
   });
   const setF = (k, v) => setForm((f) => ({ ...f, [k]: v }));
 
@@ -2434,6 +2436,8 @@ export const UserFormOrganism = ({
           active: editUser.active ? "1" : "0",
           password: "",
           password2: "",
+          avatarFile: null,
+          avatarPreview: editUser.avatar || null,
         })
       : setForm({
           name: "",
@@ -2442,6 +2446,8 @@ export const UserFormOrganism = ({
           active: "1",
           password: "",
           password2: "",
+          avatarFile: null,
+          avatarPreview: null,
         });
   }, [open, editUser]);
 
@@ -2483,6 +2489,7 @@ export const UserFormOrganism = ({
       active: form.active === "1",
       password: form.password || editUser?.password || "",
       created_at: editUser?.created_at || new Date().toISOString(),
+      avatarFile: form.avatarFile,
     });
   };
 
@@ -2504,6 +2511,56 @@ export const UserFormOrganism = ({
       }
     >
       <SectionHeader first>Informasi Akun</SectionHeader>
+      
+      {/* Avatar Picker */}
+      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
+        <div style={{ position: "relative" }}>
+          <Avatar 
+            name={form.name || "?"} 
+            role={form.role} 
+            avatar={form.avatarPreview} 
+            size={60} 
+          />
+          <label 
+            htmlFor="user-avatar-upload"
+            style={{
+              position: "absolute",
+              bottom: 0,
+              right: 0,
+              background: T.blue,
+              color: "#fff",
+              borderRadius: "50%",
+              width: 24,
+              height: 24,
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              cursor: "pointer",
+              boxShadow: "0 2px 5px rgba(0,0,0,0.3)"
+            }}
+          >
+            <span style={{ fontSize: 13 }}>📷</span>
+          </label>
+        </div>
+        <div style={{ flex: 1 }}>
+          <div style={{ fontSize: 14, fontWeight: 700 }}>Foto Profil</div>
+          <div style={{ fontSize: 12, color: T.muted }}>Rekomendasi ukuran rasio 1:1, Max 2MB.</div>
+          <input 
+            type="file" 
+            id="user-avatar-upload" 
+            accept="image/*"
+            style={{ display: "none" }}
+            onChange={(e) => {
+              const file = e.target.files?.[0];
+              if (file) {
+                setF("avatarFile", file);
+                setF("avatarPreview", URL.createObjectURL(file));
+              }
+            }}
+          />
+        </div>
+      </div>
+
       <div
         className="qc-grid-2 grid grid-cols-1 sm:grid-cols-2 gap-[14px]"
       >

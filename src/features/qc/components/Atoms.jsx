@@ -245,26 +245,33 @@ export const ColorTag = ({ color }) => {
   );
 };
 
-/** Avatar — initials circle with role-based gradient */
-export const Avatar = ({ name, role, size = 26 }) => (
-  <div
-    style={{
-      width: size,
-      height: size,
-      borderRadius: "50%",
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      fontSize: size * 0.44,
-      fontWeight: 700,
-      color: "#fff",
-      background: ROLE_GRAD[role] || ROLE_GRAD.viewer,
-      flexShrink: 0,
-    }}
-  >
-    {(name || "?").charAt(0).toUpperCase()}
-  </div>
-);
+export const Avatar = ({ name, role, avatar, size = 26 }) => {
+  const safeName = (name || "?").trim();
+  const seed = encodeURIComponent(safeName.toLowerCase());
+  const dicebearUrl = `https://api.dicebear.com/9.x/avataaars/svg?seed=${seed}&backgroundColor=b6e3f4,c0aede,d1d4f9,ffdfbf,ffd5dc`;
+  
+  // Use the provided custom avatar URL, otherwise fallback to DiceBear
+  const finalImage = avatar || dicebearUrl;
+
+  return (
+    <div
+      style={{
+        width: size,
+        height: size,
+        borderRadius: "50%",
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+        flexShrink: 0,
+        backgroundColor: ROLE_GRAD[role] || ROLE_GRAD.viewer,
+        backgroundImage: `url('${finalImage}')`,
+        backgroundSize: "cover",
+        backgroundPosition: "center",
+        border: `1px solid rgba(255,255,255,0.1)`,
+      }}
+    />
+  );
+};
 
 /** TextInput */
 export const TextInput = ({

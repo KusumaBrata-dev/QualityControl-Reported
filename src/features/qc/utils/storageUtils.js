@@ -49,3 +49,30 @@ export async function deleteStorageImage(url) {
     console.error("Failed to delete storage image:", e);
   }
 }
+
+/**
+ * Uploads a user avatar to Firebase Storage.
+ * @param {File|Blob|string} image - Image to upload
+ * @param {string} userId - The ID of the user
+ * @returns {Promise<string|null>} - Download URL
+ */
+export async function uploadUserAvatar(image, userId) {
+  if (!image) return null;
+  if (typeof image === "string" && (image.startsWith("http") || image.startsWith("https"))) {
+    return image;
+  }
+
+  let blob;
+  if (typeof image === "string" && image.startsWith("data:")) {
+    const res = await fetch(image);
+    blob = await res.blob();
+  } else if (image instanceof File || image instanceof Blob) {
+    blob = image;
+  } else {
+    return null;
+  }
+
+  const fileRef = ref(storage, `avatars/${userId}_${Date.now()}`);
+  const snapshot = await uploadBytes(fileRef, blob);
+  return await getDownloadURL(snapshot.ref);
+}
