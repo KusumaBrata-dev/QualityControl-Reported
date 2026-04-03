@@ -374,11 +374,15 @@ export const NavbarOrganism = ({
 
 /** DashboardKPIs — animated 2x2 mobile grid */
 export const DashboardKPIs = ({ reports, burningInQty }) => {
+  const approvedReports = reports.filter((r) => r.approval_status === "approved");
   const totFail = reports.reduce((a, r) => a + (Number(r.qty_fail) || 0), 0);
-  const totPass = reports.reduce((a, r) => a + (Number(r.qty_pass) || 0), 0);
-  const totInsp = totPass + totFail;
+  const totPassApproved = approvedReports.reduce((a, r) => a + (Number(r.qty_pass) || 0), 0);
+  const totFailApproved = approvedReports.reduce((a, r) => a + (Number(r.qty_fail) || 0), 0);
+  const totInsp = totPassApproved + totFailApproved;
+
+  // Use approved data for Rate to avoid Infinity/skewed math if Inspeksi is 0
   const baseQty = burningInQty > 0 ? burningInQty : totInsp;
-  const drRate = baseQty > 0 ? ((totFail / baseQty) * 100).toFixed(2) : "0.00";
+  const drRate = baseQty > 0 ? ((totFailApproved / baseQty) * 100).toFixed(2) : "0.00";
   const drNum = parseFloat(drRate);
 
   const kpis = [
@@ -435,74 +439,82 @@ export const DashboardKPIs = ({ reports, burningInQty }) => {
         {kpis.map((k, i) => (
           <div
             key={i}
-            className={`qc-kpi-card-hover anim-fade-up anim-delay-${i + 1}`}
             style={{
-              background: k.bg,
-              border: `1px solid ${k.border}`,
               borderRadius: 14,
-              padding: "14px 12px",
-              position: "relative",
-              overflow: "hidden",
-              animation: k.pulse ? "pulseRing 2s infinite" : undefined,
+              animation: k.pulse ? "pulseRing 2s ease-out infinite" : undefined,
+              willChange: k.pulse ? "box-shadow" : undefined,
             }}
           >
-            {/* Accent top bar */}
             <div
+              className={`qc-kpi-card-hover anim-fade-up anim-delay-${i + 1}`}
               style={{
-                position: "absolute",
-                top: 0,
-                left: 0,
-                right: 0,
-                height: 2,
-                background: `linear-gradient(90deg, ${k.accent}, transparent)`,
-                borderRadius: "14px 14px 0 0",
+                background: k.bg,
+                border: `1px solid ${k.border}`,
+                borderRadius: 14,
+                padding: "14px 12px",
+                position: "relative",
+                overflow: "hidden",
+                height: "100%",
               }}
-            />
+            >
+              {/* Accent top bar */}
+              <div
+                style={{
+                  position: "absolute",
+                  top: 0,
+                  left: 0,
+                  right: 0,
+                  height: 2,
+                  background: `linear-gradient(90deg, ${k.accent}, transparent)`,
+                  borderRadius: "14px 14px 0 0",
+                }}
+              />
+              {/* Background watermark */}
+              <div
+                style={{
+                  position: "absolute",
+                  right: 6,
+                  bottom: -4,
+                  fontSize: 44,
+                  fontWeight: 900,
+                  color: k.accent,
+                  opacity: 0.06,
+                  fontFamily: "'IBM Plex Mono', monospace",
+                  lineHeight: 1,
+                  userSelect: "none",
+                  pointerEvents: "none",
+                }}
+              >
+                {String(k.value).replace("%", "")}
+              </div>
 
-            {/* Background watermark number */}
-            <div
-              style={{
-                position: "absolute",
-                right: 6,
-                bottom: -4,
-                fontSize: 44,
-                fontWeight: 900,
-                color: k.accent,
-                opacity: 0.06,
-                fontFamily: "'IBM Plex Mono', monospace",
-                lineHeight: 1,
-                userSelect: "none",
-              }}
-            >
-              {String(k.value).replace("%", "")}
+              <div style={{ fontSize: 18, marginBottom: 4 }}>{k.icon}</div>
+              <div
+                style={{
+                  fontSize: 11,
+                  color: T.muted,
+                  fontWeight: 600,
+                  marginBottom: 3,
+                  textTransform: "uppercase",
+                  letterSpacing: 0.5,
+                }}
+              >
+                {k.label}
+              </div>
+              <div
+                style={{
+                  fontSize: 24,
+                  fontWeight: 900,
+                  color: k.accent,
+                  lineHeight: 1,
+                  fontFamily: "'IBM Plex Mono', monospace",
+                  marginBottom: 2,
+                }}
+              >
+                {k.value}
+              </div>
+              <div style={{ fontSize: 10, color: T.muted2 }}>{k.sub}</div>
             </div>
-
-            <div style={{ fontSize: 18, marginBottom: 4 }}>{k.icon}</div>
-            <div
-              style={{
-                fontSize: 11,
-                color: T.muted,
-                fontWeight: 600,
-                marginBottom: 3,
-                textTransform: "uppercase",
-                letterSpacing: 0.5,
-              }}
-            >
-              {k.label}
-            </div>
-            <div
-              style={{
-                fontSize: 24,
-                fontWeight: 900,
-                color: k.accent,
-                lineHeight: 1,
-                fontFamily: "'IBM Plex Mono', monospace",
-                marginBottom: 2,
-              }}
-            >
-              {k.value}
-            </div>
-            <div style={{ fontSize: 10, color: T.muted2 }}>{k.sub}</div>
           </div>
         ))}
       </div>
@@ -2526,14 +2538,28 @@ export const UserFormOrganism = ({
     permissions: DEFAULT_OPERATOR_PERMS,
   });
   const setF = (k, v) => setForm((f) => ({ ...f, [k]: v }));
-  const setP = (k, v) => setForm((f) => ({ ...f, permissions: { ...f.permissions, [k]: v } }));
+  const setP = (k, v) =>
+    setForm((f) => ({ ...f, permissions: { ...f.permissions, [k]: v } }));
 
   useEffect(() => {
     if (!open) return;
     if (editUser) {
-      const defaultPerms = editUser.role === "operator"
-        ? { add_report: true, edit_report: true, scan_barcode: true, change_photo: true, change_password: true }
-        : { add_report: false, edit_report: false, scan_barcode: false, change_photo: true, change_password: true };
+      const defaultPerms =
+        editUser.role === "operator"
+          ? {
+              add_report: true,
+              edit_report: true,
+              scan_barcode: true,
+              change_photo: true,
+              change_password: true,
+            }
+          : {
+              add_report: false,
+              edit_report: false,
+              scan_barcode: false,
+              change_photo: true,
+              change_password: true,
+            };
       setForm({
         name: editUser.name,
         username: editUser.username,
@@ -2555,7 +2581,13 @@ export const UserFormOrganism = ({
         password2: "",
         avatarFile: null,
         avatarPreview: null,
-        permissions: { add_report: true, edit_report: true, scan_barcode: true, change_photo: true, change_password: true },
+        permissions: {
+          add_report: true,
+          edit_report: true,
+          scan_barcode: true,
+          change_photo: true,
+          change_password: true,
+        },
       });
     }
   }, [open, editUser]);
@@ -2563,11 +2595,23 @@ export const UserFormOrganism = ({
   // Auto-reset permissions when role changes
   useEffect(() => {
     if (form.role === "operator") {
-      setF("permissions", { add_report: true, edit_report: true, scan_barcode: true, change_photo: true, change_password: true });
+      setF("permissions", {
+        add_report: true,
+        edit_report: true,
+        scan_barcode: true,
+        change_photo: true,
+        change_password: true,
+      });
     } else if (form.role === "viewer") {
-      setF("permissions", { add_report: false, edit_report: false, scan_barcode: false, change_photo: true, change_password: true });
+      setF("permissions", {
+        add_report: false,
+        edit_report: false,
+        scan_barcode: false,
+        change_photo: true,
+        change_password: true,
+      });
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [form.role]);
 
   const handleSave = () => {
@@ -2778,43 +2822,93 @@ export const UserFormOrganism = ({
           <SectionHeader>Izin Akses</SectionHeader>
           <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
             {[
-              { key: "add_report",    label: "Tambah Laporan QC",     icon: "📋",  onlyFor: "operator" },
-              { key: "edit_report",   label: "Edit / Hapus Laporan",  icon: "✏️",  onlyFor: "operator" },
-              { key: "scan_barcode",  label: "Scan Barcode",          icon: "📷",  onlyFor: "operator" },
-              { key: "change_photo",  label: "Ganti Foto Profil",     icon: "🖼️",  onlyFor: null },
-              { key: "change_password",label: "Ganti Password Sendiri",icon: "🔑", onlyFor: null },
+              {
+                key: "add_report",
+                label: "Tambah Laporan QC",
+                icon: "📋",
+                onlyFor: "operator",
+              },
+              {
+                key: "edit_report",
+                label: "Edit / Hapus Laporan",
+                icon: "✏️",
+                onlyFor: "operator",
+              },
+              {
+                key: "scan_barcode",
+                label: "Scan Barcode",
+                icon: "📷",
+                onlyFor: "operator",
+              },
+              {
+                key: "change_photo",
+                label: "Ganti Foto Profil",
+                icon: "🖼️",
+                onlyFor: null,
+              },
+              {
+                key: "change_password",
+                label: "Ganti Password Sendiri",
+                icon: "🔑",
+                onlyFor: null,
+              },
             ]
-            .filter(p => !p.onlyFor || p.onlyFor === form.role)
-            .map(p => (
-              <div key={p.key} style={{
-                display: "flex", alignItems: "center", justifyContent: "space-between",
-                padding: "9px 12px",
-                background: form.permissions[p.key] ? "rgba(63,185,80,0.08)" : T.surface2,
-                border: `1px solid ${form.permissions[p.key] ? "rgba(63,185,80,0.25)" : T.border}`,
-                borderRadius: 8, cursor: "pointer",
-                transition: "all 0.15s",
-              }} onClick={() => setP(p.key, !form.permissions[p.key])}>
-                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
-                  <span style={{ fontSize: 15 }}>{p.icon}</span>
-                  <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{p.label}</span>
+              .filter((p) => !p.onlyFor || p.onlyFor === form.role)
+              .map((p) => (
+                <div
+                  key={p.key}
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    justifyContent: "space-between",
+                    padding: "9px 12px",
+                    background: form.permissions[p.key]
+                      ? "rgba(63,185,80,0.08)"
+                      : T.surface2,
+                    border: `1px solid ${form.permissions[p.key] ? "rgba(63,185,80,0.25)" : T.border}`,
+                    borderRadius: 8,
+                    cursor: "pointer",
+                    transition: "all 0.15s",
+                  }}
+                  onClick={() => setP(p.key, !form.permissions[p.key])}
+                >
+                  <div
+                    style={{ display: "flex", alignItems: "center", gap: 8 }}
+                  >
+                    <span style={{ fontSize: 15 }}>{p.icon}</span>
+                    <span
+                      style={{ fontSize: 13, fontWeight: 600, color: T.text }}
+                    >
+                      {p.label}
+                    </span>
+                  </div>
+                  {/* Toggle pill */}
+                  <div
+                    style={{
+                      width: 36,
+                      height: 20,
+                      borderRadius: 10,
+                      background: form.permissions[p.key] ? T.green : T.border,
+                      position: "relative",
+                      transition: "background 0.2s",
+                    }}
+                  >
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: 2,
+                        left: form.permissions[p.key] ? 18 : 2,
+                        width: 16,
+                        height: 16,
+                        borderRadius: "50%",
+                        background: "#fff",
+                        transition: "left 0.2s",
+                        boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                      }}
+                    />
+                  </div>
                 </div>
-                {/* Toggle pill */}
-                <div style={{
-                  width: 36, height: 20, borderRadius: 10,
-                  background: form.permissions[p.key] ? T.green : T.border,
-                  position: "relative", transition: "background 0.2s",
-                }}>
-                  <div style={{
-                    position: "absolute", top: 2,
-                    left: form.permissions[p.key] ? 18 : 2,
-                    width: 16, height: 16, borderRadius: "50%",
-                    background: "#fff",
-                    transition: "left 0.2s",
-                    boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
-                  }} />
-                </div>
-              </div>
-            ))}
+              ))}
           </div>
           <div style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>
             💡 Klik toggle untuk mengaktifkan/menonaktifkan izin.

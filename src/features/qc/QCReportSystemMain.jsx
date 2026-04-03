@@ -219,6 +219,12 @@ export default function QCReportSystemMain() {
         .qc-root button:active:not(:disabled) { transform: none !important; }
         .qc-root tbody tr:hover td { background: ${T.surface2}; }
         @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
+        @keyframes fadeInDown { from { opacity: 0; transform: translateY(-8px); } to { opacity: 1; transform: translateY(0); } }
+        @keyframes pulseRing {
+          0%   { box-shadow: 0 0 0 0 rgba(163, 113, 247, 0.4); }
+          50%  { box-shadow: 0 0 0 6px rgba(163, 113, 247, 0.0); }
+          100% { box-shadow: 0 0 0 0 rgba(163, 113, 247, 0.0); }
+        }
 
         /* ── Anti-zoom: iOS forces zoom when input font-size < 16px ── */
         .qc-root input, .qc-root select, .qc-root textarea {
