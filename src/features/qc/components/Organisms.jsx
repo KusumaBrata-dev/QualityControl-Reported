@@ -242,7 +242,7 @@ export const LoginOrganism = ({ users, onLogin, dbStats }) => {
             color: T.muted2,
           }}
         >
-          QC Report System v3.0
+          QC Report System V2.1.1
         </div>
       </div>
     </div>
@@ -312,7 +312,10 @@ export const NavbarOrganism = ({
         </div>
       </div>
       {/* Tabs */}
-      <div className="qc-nav-tabs flex overflow-x-auto whitespace-nowrap scrollbar-hide flex-nowrap" style={{ gap: 2, paddingBottom: 2 }}>
+      <div
+        className="qc-nav-tabs flex overflow-x-auto whitespace-nowrap scrollbar-hide flex-nowrap"
+        style={{ gap: 2, paddingBottom: 2 }}
+      >
         {[
           { key: "dashboard", label: "📊 Dashboard" },
           { key: "reports", label: "📋 Laporan QC" },
@@ -369,61 +372,139 @@ export const NavbarOrganism = ({
   </nav>
 );
 
-/** DashboardKPIs — 4-card KPI grid + alert */
+/** DashboardKPIs — animated 2x2 mobile grid */
 export const DashboardKPIs = ({ reports, burningInQty }) => {
   const totFail = reports.reduce((a, r) => a + (Number(r.qty_fail) || 0), 0);
   const totPass = reports.reduce((a, r) => a + (Number(r.qty_pass) || 0), 0);
   const totInsp = totPass + totFail;
-
-  // DR = Total Fail / Barang Masuk (if provided). Else fallback to Total Fail / Total Inspected.
   const baseQty = burningInQty > 0 ? burningInQty : totInsp;
   const drRate = baseQty > 0 ? ((totFail / baseQty) * 100).toFixed(2) : "0.00";
+  const drNum = parseFloat(drRate);
+
+  const kpis = [
+    {
+      icon: "📦",
+      label: "Barang Masuk",
+      value: burningInQty || "—",
+      accent: "#2F81F7",
+      bg: "rgba(47,129,247,0.08)",
+      border: "rgba(47,129,247,0.2)",
+      sub: "Unit hari ini",
+    },
+    {
+      icon: "🚫",
+      label: "Total Defect",
+      value: totFail,
+      accent: "#A371F7",
+      bg: "rgba(163,113,247,0.08)",
+      border: "rgba(163,113,247,0.2)",
+      sub: "Unit reject",
+      pulse: totFail > 0,
+    },
+    {
+      icon: "📊",
+      label: "Total Inspeksi",
+      value: totInsp,
+      accent: "#3FB950",
+      bg: "rgba(63,185,80,0.08)",
+      border: "rgba(63,185,80,0.2)",
+      sub: "Unit diperiksa",
+    },
+    {
+      icon: "📉",
+      label: "Defect Rate",
+      value: `${drRate}%`,
+      accent: "#F85149",
+      bg: "rgba(248,81,73,0.08)",
+      border: "rgba(248,81,73,0.2)",
+      sub: burningInQty ? "Dari barang masuk" : "Dari inspeksi",
+    },
+  ];
 
   return (
     <>
-      {totFail > 0 && (
-        <div
-          style={{
-            padding: "12px 16px",
-            borderRadius: T.r,
-            fontSize: 13,
-            background: "rgba(210,153,34,.1)",
-            border: "1px solid rgba(210,153,34,.25)",
-            color: T.yellow,
-            marginBottom: 16,
-            display: "flex",
-            alignItems: "center",
-            gap: 10,
-          }}
-        >
-          ⚠ Terdapat <strong>{totFail} unit REJECT</strong> pada hari ini –
-          perhatikan defect rate!
-        </div>
-      )}
       <div
-        className="qc-kpi-grid grid grid-cols-1 sm:grid-cols-3 gap-[14px] mb-[20px]"
+        className="qc-kpi-mobile-grid"
+        style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(2, 1fr)",
+          gap: 10,
+          marginBottom: 14,
+        }}
       >
-        <KpiCard
-          colorKey="blue"
-          icon="🔥"
-          label="Barang Masuk"
-          value={burningInQty || "-"}
-        />
-        <KpiCard
-          colorKey="red"
-          icon="🚫"
-          label="Total Defect / Reject"
-          value={totFail}
-        />
-        <KpiCard
-          colorKey="yellow"
-          icon="📉"
-          label="Defect Rate %"
-          value={`${drRate}%`}
-          sub={
-            burningInQty ? "Dari Total Barang Masuk" : "Dari Total Diperiksa"
-          }
-        />
+        {kpis.map((k, i) => (
+          <div
+            key={i}
+            className={`qc-kpi-card-hover anim-fade-up anim-delay-${i + 1}`}
+            style={{
+              background: k.bg,
+              border: `1px solid ${k.border}`,
+              borderRadius: 14,
+              padding: "14px 12px",
+              position: "relative",
+              overflow: "hidden",
+              animation: k.pulse ? "pulseRing 2s infinite" : undefined,
+            }}
+          >
+            {/* Accent top bar */}
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                height: 2,
+                background: `linear-gradient(90deg, ${k.accent}, transparent)`,
+                borderRadius: "14px 14px 0 0",
+              }}
+            />
+
+            {/* Background watermark number */}
+            <div
+              style={{
+                position: "absolute",
+                right: 6,
+                bottom: -4,
+                fontSize: 44,
+                fontWeight: 900,
+                color: k.accent,
+                opacity: 0.06,
+                fontFamily: "'IBM Plex Mono', monospace",
+                lineHeight: 1,
+                userSelect: "none",
+              }}
+            >
+              {String(k.value).replace("%", "")}
+            </div>
+
+            <div style={{ fontSize: 18, marginBottom: 4 }}>{k.icon}</div>
+            <div
+              style={{
+                fontSize: 11,
+                color: T.muted,
+                fontWeight: 600,
+                marginBottom: 3,
+                textTransform: "uppercase",
+                letterSpacing: 0.5,
+              }}
+            >
+              {k.label}
+            </div>
+            <div
+              style={{
+                fontSize: 24,
+                fontWeight: 900,
+                color: k.accent,
+                lineHeight: 1,
+                fontFamily: "'IBM Plex Mono', monospace",
+                marginBottom: 2,
+              }}
+            >
+              {k.value}
+            </div>
+            <div style={{ fontSize: 10, color: T.muted2 }}>{k.sub}</div>
+          </div>
+        ))}
       </div>
     </>
   );
@@ -545,9 +626,7 @@ export const DashboardCharts = ({ reports, selectedDate, burningInQty }) => {
 
   return (
     <>
-      <div
-        className="qc-grid-2 grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-[16px] mb-[16px]"
-      >
+      <div className="qc-grid-2 grid grid-cols-1 lg:grid-cols-[1fr_2fr] gap-[16px] mb-[16px]">
         <Card>
           <CardHeader title="Grafik Defect" />
           <div style={{ padding: 20, height: 260 }}>
@@ -680,9 +759,7 @@ export const DashboardCharts = ({ reports, selectedDate, burningInQty }) => {
       </div>
 
       {/* PARETO & SPC TREND ROWS */}
-      <div
-        className="qc-grid-2 grid grid-cols-1 lg:grid-cols-2 gap-[16px] mb-[18px]"
-      >
+      <div className="qc-grid-2 grid grid-cols-1 lg:grid-cols-2 gap-[16px] mb-[18px]">
         <Card>
           <CardHeader title="Pareto Analysis (80/20 Kategori Defect)" />
           <div style={{ padding: 20, height: 260 }}>
@@ -1102,7 +1179,9 @@ export const ReportTable = ({
           }}
         >
           <div className="flex items-center gap-2">
-            <span style={{ fontSize: 13, color: T.muted }}>Baris per halaman:</span>
+            <span style={{ fontSize: 13, color: T.muted }}>
+              Baris per halaman:
+            </span>
             <select
               value={limit}
               onChange={(e) => setLimit(Number(e.target.value))}
@@ -1122,7 +1201,15 @@ export const ReportTable = ({
               <option value={50}>50</option>
             </select>
           </div>
-          <div style={{ display: "flex", gap: 6, alignItems: "center", flexWrap: "wrap", justifyContent: "center" }}>
+          <div
+            style={{
+              display: "flex",
+              gap: 6,
+              alignItems: "center",
+              flexWrap: "wrap",
+              justifyContent: "center",
+            }}
+          >
             <Btn
               variant="ghost"
               size="sm"
@@ -1143,7 +1230,15 @@ export const ReportTable = ({
               } else if (current >= total - 2) {
                 pages = [1, "...", total - 3, total - 2, total - 1, total];
               } else {
-                pages = [1, "...", current - 1, current, current + 1, "...", total];
+                pages = [
+                  1,
+                  "...",
+                  current - 1,
+                  current,
+                  current + 1,
+                  "...",
+                  total,
+                ];
               }
               return pages.map((p, i) => (
                 <button
@@ -1153,8 +1248,12 @@ export const ReportTable = ({
                   style={{
                     padding: "4px 10px",
                     borderRadius: T.r,
-                    border: p !== "..." && p === page ? `1px solid ${T.blue}` : "none",
-                    background: p === page ? "rgba(47,129,247,.15)" : "transparent",
+                    border:
+                      p !== "..." && p === page
+                        ? `1px solid ${T.blue}`
+                        : "none",
+                    background:
+                      p === page ? "rgba(47,129,247,.15)" : "transparent",
                     color: p === page ? T.blue : p === "..." ? T.muted : T.text,
                     fontSize: 13,
                     fontWeight: p === page ? 700 : 500,
@@ -1208,9 +1307,7 @@ export const MatrixOrganism = ({ reports }) => {
   };
   return (
     <>
-      <div
-        className="qc-grid-2 grid grid-cols-1 lg:grid-cols-2 gap-[16px] mb-[18px]"
-      >
+      <div className="qc-grid-2 grid grid-cols-1 lg:grid-cols-2 gap-[16px] mb-[18px]">
         {groups.map((g) => (
           <Card key={g.model}>
             <div style={{ padding: 20 }}>
@@ -1259,9 +1356,7 @@ export const MatrixOrganism = ({ reports }) => {
                         {rs.length} batch
                       </span>
                     </div>
-                    <div
-                      className="qc-kpi-grid grid grid-cols-1 sm:grid-cols-3 gap-[8px] mb-[10px]"
-                    >
+                    <div className="qc-kpi-grid grid grid-cols-1 sm:grid-cols-3 gap-[8px] mb-[10px]">
                       <StatMini label="Total Reject" value={f} color={T.red} />
                       <StatMini
                         label="Avg DR"
@@ -1331,9 +1426,7 @@ export const UserGrid = ({
       </div>
     );
   return (
-    <div
-      className="qc-grid-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[14px]"
-    >
+    <div className="qc-grid-3 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-[14px]">
       {users.map((u) => {
         const isMe = currentUser && u.id === currentUser.id;
         return (
@@ -1859,9 +1952,7 @@ export const ReportFormOrganism = ({
       </div>
 
       <SectionHeader icon="📦">Informasi Produk & Batch</SectionHeader>
-      <div
-        className="qc-grid-2 grid grid-cols-1 md:grid-cols-2 gap-[14px] mb-[20px]"
-      >
+      <div className="qc-grid-2 grid grid-cols-1 md:grid-cols-2 gap-[14px] mb-[20px]">
         <div>
           <FieldLabel>Produk & Warna *</FieldLabel>
           <SelectInput
@@ -1906,9 +1997,7 @@ export const ReportFormOrganism = ({
       </div>
 
       <SectionHeader icon="🔢">Kuantitas Unit</SectionHeader>
-      <div
-        className="qc-grid-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[12px] mb-[20px]"
-      >
+      <div className="qc-grid-2 grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-[12px] mb-[20px]">
         <div>
           <FieldLabel>Barang Masuk</FieldLabel>
           <TextInput
@@ -1955,9 +2044,7 @@ export const ReportFormOrganism = ({
       </div>
 
       <SectionHeader icon="🔎">Jenis Defect</SectionHeader>
-      <div
-        className="qc-grid-2 grid grid-cols-1 md:grid-cols-2 gap-[14px]"
-      >
+      <div className="qc-grid-2 grid grid-cols-1 md:grid-cols-2 gap-[14px]">
         <div>
           <FieldLabel>Kategori Defect</FieldLabel>
           <div
@@ -2081,9 +2168,7 @@ export const DetailModal = ({
         }
       >
         {/* KPIs & Summary */}
-        <div
-          className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-[16px] mb-[20px]"
-        >
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-[16px] mb-[20px]">
           <div
             style={{
               background: T.surface2,
@@ -2227,9 +2312,7 @@ export const DetailModal = ({
         </div>
 
         {/* Defect Details */}
-        <div
-          className="grid grid-cols-1 lg:grid-cols-2 gap-[16px] mb-[20px]"
-        >
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-[16px] mb-[20px]">
           <div
             style={{
               background: T.surface2,
@@ -2411,9 +2494,26 @@ export const UserFormOrganism = ({
   onClose,
   editUser,
   onSave,
+  onAvatarSave,
   users,
   showToast,
+  isAdminEditor = false,
 }) => {
+  const DEFAULT_OPERATOR_PERMS = {
+    add_report: true,
+    edit_report: true,
+    scan_barcode: true,
+    change_photo: true,
+    change_password: true,
+  };
+  const DEFAULT_VIEWER_PERMS = {
+    add_report: false,
+    edit_report: false,
+    scan_barcode: false,
+    change_photo: true,
+    change_password: true,
+  };
+
   const [form, setForm] = useState({
     name: "",
     username: "",
@@ -2423,33 +2523,52 @@ export const UserFormOrganism = ({
     password2: "",
     avatarFile: null,
     avatarPreview: null,
+    permissions: DEFAULT_OPERATOR_PERMS,
   });
   const setF = (k, v) => setForm((f) => ({ ...f, [k]: v }));
+  const setP = (k, v) => setForm((f) => ({ ...f, permissions: { ...f.permissions, [k]: v } }));
 
   useEffect(() => {
     if (!open) return;
-    editUser
-      ? setForm({
-          name: editUser.name,
-          username: editUser.username,
-          role: editUser.role,
-          active: editUser.active ? "1" : "0",
-          password: "",
-          password2: "",
-          avatarFile: null,
-          avatarPreview: editUser.avatar || null,
-        })
-      : setForm({
-          name: "",
-          username: "",
-          role: "operator",
-          active: "1",
-          password: "",
-          password2: "",
-          avatarFile: null,
-          avatarPreview: null,
-        });
+    if (editUser) {
+      const defaultPerms = editUser.role === "operator"
+        ? { add_report: true, edit_report: true, scan_barcode: true, change_photo: true, change_password: true }
+        : { add_report: false, edit_report: false, scan_barcode: false, change_photo: true, change_password: true };
+      setForm({
+        name: editUser.name,
+        username: editUser.username,
+        role: editUser.role,
+        active: editUser.active ? "1" : "0",
+        password: "",
+        password2: "",
+        avatarFile: null,
+        avatarPreview: editUser.avatar || null,
+        permissions: editUser.permissions || defaultPerms,
+      });
+    } else {
+      setForm({
+        name: "",
+        username: "",
+        role: "operator",
+        active: "1",
+        password: "",
+        password2: "",
+        avatarFile: null,
+        avatarPreview: null,
+        permissions: { add_report: true, edit_report: true, scan_barcode: true, change_photo: true, change_password: true },
+      });
+    }
   }, [open, editUser]);
+
+  // Auto-reset permissions when role changes
+  useEffect(() => {
+    if (form.role === "operator") {
+      setF("permissions", { add_report: true, edit_report: true, scan_barcode: true, change_photo: true, change_password: true });
+    } else if (form.role === "viewer") {
+      setF("permissions", { add_report: false, edit_report: false, scan_barcode: false, change_photo: true, change_password: true });
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [form.role]);
 
   const handleSave = () => {
     if (!form.name || !form.username) {
@@ -2490,6 +2609,7 @@ export const UserFormOrganism = ({
       password: form.password || editUser?.password || "",
       created_at: editUser?.created_at || new Date().toISOString(),
       avatarFile: form.avatarFile,
+      permissions: form.role === "admin" ? null : form.permissions,
     });
   };
 
@@ -2511,17 +2631,24 @@ export const UserFormOrganism = ({
       }
     >
       <SectionHeader first>Informasi Akun</SectionHeader>
-      
+
       {/* Avatar Picker */}
-      <div style={{ display: "flex", alignItems: "center", gap: 16, marginBottom: 16 }}>
+      <div
+        style={{
+          display: "flex",
+          alignItems: "center",
+          gap: 16,
+          marginBottom: 16,
+        }}
+      >
         <div style={{ position: "relative" }}>
-          <Avatar 
-            name={form.name || "?"} 
-            role={form.role} 
-            avatar={form.avatarPreview} 
-            size={60} 
+          <Avatar
+            name={form.name || "?"}
+            role={form.role}
+            avatar={form.avatarPreview}
+            size={60}
           />
-          <label 
+          <label
             htmlFor="user-avatar-upload"
             style={{
               position: "absolute",
@@ -2536,7 +2663,7 @@ export const UserFormOrganism = ({
               alignItems: "center",
               justifyContent: "center",
               cursor: "pointer",
-              boxShadow: "0 2px 5px rgba(0,0,0,0.3)"
+              boxShadow: "0 2px 5px rgba(0,0,0,0.3)",
             }}
           >
             <span style={{ fontSize: 13 }}>📷</span>
@@ -2544,26 +2671,30 @@ export const UserFormOrganism = ({
         </div>
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 14, fontWeight: 700 }}>Foto Profil</div>
-          <div style={{ fontSize: 12, color: T.muted }}>Rekomendasi ukuran rasio 1:1, Max 2MB.</div>
-          <input 
-            type="file" 
-            id="user-avatar-upload" 
+          <div style={{ fontSize: 12, color: T.muted }}>
+            Rekomendasi ukuran rasio 1:1, Max 2MB.
+          </div>
+          <input
+            type="file"
+            id="user-avatar-upload"
             accept="image/*"
             style={{ display: "none" }}
             onChange={(e) => {
               const file = e.target.files?.[0];
-              if (file) {
-                setF("avatarFile", file);
-                setF("avatarPreview", URL.createObjectURL(file));
+              if (!file) return;
+              // Update preview immediately
+              setF("avatarFile", file);
+              setF("avatarPreview", URL.createObjectURL(file));
+              // If editing existing user, auto-save avatar and close
+              if (editUser && onAvatarSave) {
+                onAvatarSave(editUser, file);
               }
             }}
           />
         </div>
       </div>
 
-      <div
-        className="qc-grid-2 grid grid-cols-1 sm:grid-cols-2 gap-[14px]"
-      >
+      <div className="qc-grid-2 grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
         <div>
           <FieldLabel>Nama Lengkap *</FieldLabel>
           <TextInput
@@ -2603,9 +2734,7 @@ export const UserFormOrganism = ({
           ? "Ganti Password (kosongkan jika tidak berubah)"
           : "Password"}
       </SectionHeader>
-      <div
-        className="qc-grid-2 grid grid-cols-1 sm:grid-cols-2 gap-[14px]"
-      >
+      <div className="qc-grid-2 grid grid-cols-1 sm:grid-cols-2 gap-[14px]">
         <div>
           <FieldLabel>Password *</FieldLabel>
           <TextInput
@@ -2642,6 +2771,56 @@ export const UserFormOrganism = ({
         <strong>Operator</strong> = buat & edit laporan ·{" "}
         <strong>Viewer</strong> = hanya lihat
       </div>
+
+      {/* Permission toggles — only show for non-admin roles */}
+      {(form.role === "operator" || form.role === "viewer") && (
+        <>
+          <SectionHeader>Izin Akses</SectionHeader>
+          <div style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+            {[
+              { key: "add_report",    label: "Tambah Laporan QC",     icon: "📋",  onlyFor: "operator" },
+              { key: "edit_report",   label: "Edit / Hapus Laporan",  icon: "✏️",  onlyFor: "operator" },
+              { key: "scan_barcode",  label: "Scan Barcode",          icon: "📷",  onlyFor: "operator" },
+              { key: "change_photo",  label: "Ganti Foto Profil",     icon: "🖼️",  onlyFor: null },
+              { key: "change_password",label: "Ganti Password Sendiri",icon: "🔑", onlyFor: null },
+            ]
+            .filter(p => !p.onlyFor || p.onlyFor === form.role)
+            .map(p => (
+              <div key={p.key} style={{
+                display: "flex", alignItems: "center", justifyContent: "space-between",
+                padding: "9px 12px",
+                background: form.permissions[p.key] ? "rgba(63,185,80,0.08)" : T.surface2,
+                border: `1px solid ${form.permissions[p.key] ? "rgba(63,185,80,0.25)" : T.border}`,
+                borderRadius: 8, cursor: "pointer",
+                transition: "all 0.15s",
+              }} onClick={() => setP(p.key, !form.permissions[p.key])}>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <span style={{ fontSize: 15 }}>{p.icon}</span>
+                  <span style={{ fontSize: 13, fontWeight: 600, color: T.text }}>{p.label}</span>
+                </div>
+                {/* Toggle pill */}
+                <div style={{
+                  width: 36, height: 20, borderRadius: 10,
+                  background: form.permissions[p.key] ? T.green : T.border,
+                  position: "relative", transition: "background 0.2s",
+                }}>
+                  <div style={{
+                    position: "absolute", top: 2,
+                    left: form.permissions[p.key] ? 18 : 2,
+                    width: 16, height: 16, borderRadius: "50%",
+                    background: "#fff",
+                    transition: "left 0.2s",
+                    boxShadow: "0 1px 3px rgba(0,0,0,0.3)",
+                  }} />
+                </div>
+              </div>
+            ))}
+          </div>
+          <div style={{ fontSize: 11, color: T.muted, marginTop: 4 }}>
+            💡 Klik toggle untuk mengaktifkan/menonaktifkan izin.
+          </div>
+        </>
+      )}
     </ModalShell>
   );
 };

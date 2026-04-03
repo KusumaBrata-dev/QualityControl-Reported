@@ -61,11 +61,27 @@ export default function QCReportSystemMain() {
     .toISOString()
     .slice(0, 10);
   const [selectedDate, setSelectedDate] = useState(todayStr);
-  const [isDark, setIsDark] = useState(false);
+  const [isDark, setIsDark] = useState(() => {
+    const saved = localStorage.getItem("qc_theme");
+    const isDarkMode = saved !== null ? saved === "dark" : true; // default dark
+    if (isDarkMode) document.documentElement.classList.add("dark");
+    else document.documentElement.classList.remove("dark");
+    return isDarkMode;
+  });
   const [activeModel, setActiveModel] = useState("all");
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
-  const handleToggleTheme = () => setIsDark((d) => !d);
+  const handleToggleTheme = () => setIsDark((d) => {
+    const next = !d;
+    if (next) {
+      document.documentElement.classList.add("dark");
+      localStorage.setItem("qc_theme", "dark");
+    } else {
+      document.documentElement.classList.remove("dark");
+      localStorage.setItem("qc_theme", "light");
+    }
+    return next;
+  });
 
   const [tab, setTab] = useState(() => {
     const saved = localStorage.getItem("qc_active_tab") || "dashboard";
@@ -301,9 +317,30 @@ export default function QCReportSystemMain() {
     }
   }, [reports, showToast]);
 
-  const canEdit =
-    currentUser && ["admin", "operator"].includes(currentUser.role);
-  const isAdmin = currentUser?.role === "admin";
+  const isAdmin = currentUser?.role === "admin" || currentUser?.username === "hikmat";
+  const isSuperUser = isAdmin;
+
+  // Helper: get effective permission. Admin/hikmat bypass all.
+  const hasPerm = (key) => {
+    if (!currentUser) return false;
+    if (isSuperUser) return true;
+    if (currentUser.role === "admin") return true;
+    // Operator/viewer: respect per-user permissions (default true for operator if not set)
+    const perms = currentUser.permissions;
+    if (!perms) {
+      // Legacy: operator defaults
+      if (currentUser.role === "operator") return ["add_report","edit_report","scan_barcode","change_photo","change_password"].includes(key);
+      if (currentUser.role === "viewer") return ["change_photo","change_password"].includes(key);
+      return false;
+    }
+    return !!perms[key];
+  };
+
+  const canEdit = currentUser && (isAdmin || (currentUser.role === "operator" && hasPerm("add_report")));
+  const canEditReport = isAdmin || hasPerm("edit_report");
+  const canScanBarcode = isAdmin || hasPerm("scan_barcode");
+  const canChangePhoto = isAdmin || hasPerm("change_photo");
+  const canChangePassword = isAdmin || hasPerm("change_password");
 
   // ── Auth ──────────────────────────────────────────
   const handleLogin = (user) => {
@@ -484,6 +521,62 @@ export default function QCReportSystemMain() {
       },
     });
   };
+
+  /** Avatar-only quick save — called immediately when user picks a photo */
+  const handleAvatarSave = async (user, file) => {
+    if (saving || !file || !user?.id) return;
+    setSaving(true);
+    showToast("📤 Menyimpan foto profil...");
+    try {
+      // Step 1: Convert to base64 immediately (guaranteed to work)
+      const base64 = await new Promise((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = (e) => resolve(e.target.result);
+        reader.onerror = () => reject(new Error("Gagal membaca file"));
+        reader.readAsDataURL(file);
+      });
+
+      if (!base64) throw new Error("Konversi gambar gagal");
+
+      // Step 2: Save base64 directly to Firestore (always works)
+      await setDoc(
+        doc(db, "users", String(user.id)),
+        { avatar: base64 },
+        { merge: true }
+      );
+
+      // Step 3: Update local state immediately
+      if (currentUser?.id === user.id) {
+        const updated = { ...currentUser, avatar: base64 };
+        setCurrentUser(updated);
+        localStorage.setItem("qc_auth_user", JSON.stringify(updated));
+      }
+
+      showToast("✅ Foto profil berhasil diperbarui!");
+      setUserFormOpen(false);
+
+      // Step 4 (background): Try to also upload to Storage for better performance
+      uploadUserAvatar(file, String(user.id))
+        .then((url) => {
+          if (url) {
+            setDoc(doc(db, "users", String(user.id)), { avatar: url }, { merge: true });
+            if (currentUser?.id === user.id) {
+              const updated = { ...currentUser, avatar: url };
+              setCurrentUser(updated);
+              localStorage.setItem("qc_auth_user", JSON.stringify(updated));
+            }
+          }
+        })
+        .catch(() => {/* Storage gagal, tapi base64 sudah tersimpan */});
+
+    } catch (err) {
+      console.error("Avatar save error:", err);
+      showToast("Gagal menyimpan foto: " + err.message, "err");
+    } finally {
+      setSaving(false);
+    }
+  };
+
   const handleSaveUser = async (data) => {
     if (saving) return;
     setSaving(true);
@@ -495,14 +588,34 @@ export default function QCReportSystemMain() {
     try {
       let avatarUrl = data.avatar || null;
       if (data.avatarFile) {
-        showToast("Meng-upload Avatar...", "info");
-        const url = await uploadUserAvatar(data.avatarFile, String(id));
-        if (url) avatarUrl = url;
+        showToast("📤 Meng-upload foto profil...");
+        try {
+          const url = await uploadUserAvatar(data.avatarFile, String(id));
+          if (url) {
+            avatarUrl = url;
+          } else {
+            throw new Error("URL kosong dari Storage");
+          }
+        } catch (storageErr) {
+          console.error("Storage upload failed, falling back to base64:", storageErr);
+          // Fallback: convert to base64 and store directly in Firestore
+          avatarUrl = await new Promise((resolve) => {
+            const reader = new FileReader();
+            reader.onload = (e) => resolve(e.target.result);
+            reader.onerror = () => resolve(null);
+            reader.readAsDataURL(data.avatarFile);
+          });
+          if (avatarUrl) {
+            showToast("⚠️ Storage gagal, foto disimpan lokal", "ok");
+          }
+        }
       }
       
       const payload = { ...data, id };
       delete payload.avatarFile;
+      delete payload.avatarPreview;
       if (avatarUrl) payload.avatar = avatarUrl;
+      
       await setDoc(
         doc(db, "users", String(id)),
         payload,
@@ -512,7 +625,7 @@ export default function QCReportSystemMain() {
         targetName: data.name,
       });
       if (currentUser?.id === id) {
-        const { password, avatarFile, ...safe } = payload;
+        const { password, avatarFile, avatarPreview, ...safe } = payload;
         setCurrentUser(safe);
         localStorage.setItem("qc_auth_user", JSON.stringify(safe));
       }
@@ -524,8 +637,12 @@ export default function QCReportSystemMain() {
       setSaving(false);
     }
   };
-  const handleChangePw = (id, _name) => {
-    setPwTarget(users.find((u) => u.id === id) || null);
+  const handleChangePw = (userOrId, _name) => {
+    // Accept either a full user object OR just an id
+    const target = typeof userOrId === "object"
+      ? userOrId
+      : (users.find((u) => u.id === userOrId) || null);
+    setPwTarget(target);
     setPwOpen(true);
   };
   const handleSavePw = async (pw) => {
@@ -631,6 +748,11 @@ export default function QCReportSystemMain() {
         onToggleTheme={handleToggleTheme}
         activeModel={activeModel}
         onChangeModel={setActiveModel}
+        onAvatarSave={handleAvatarSave}
+        onChangePw={handleChangePw}
+        isAdmin={isAdmin}
+        canChangePhoto={canChangePhoto}
+        canChangePassword={canChangePassword}
       />
 
       <GlobalSidebar
@@ -657,6 +779,7 @@ export default function QCReportSystemMain() {
               reports={reports}
               canEdit={canEdit}
               dailyProd={dailyProd}
+              isDark={isDark}
               onSaveDailyProd={handleSaveDailyProd}
               onDetail={handleDetail}
               onEdit={handleEditReport}
@@ -732,8 +855,10 @@ export default function QCReportSystemMain() {
         onClose={() => setUserFormOpen(false)}
         editUser={editUser}
         onSave={handleSaveUser}
+        onAvatarSave={handleAvatarSave}
         users={users}
         showToast={showToast}
+        isAdminEditor={isAdmin}
       />
       <ChangePwOrganism
         open={pwOpen}
@@ -754,9 +879,10 @@ export default function QCReportSystemMain() {
       <ToastNotif toast={toastState} />
 
       <MobileFAB
-        onClick={() => setScannerOpen(true)}
-        visible={canEdit}
-        isDark={isDark}
+        canEdit={canEdit}
+        canScanBarcode={canScanBarcode}
+        onNewReport={handleNewReport}
+        onOpenScanner={() => setScannerOpen(true)}
       />
       
       <MobileBottomNav

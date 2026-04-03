@@ -23,6 +23,7 @@ export const DashboardTemplate = ({
   reports,
   canEdit,
   dailyProd,
+  isDark = true,
   onSaveDailyProd,
   onDetail,
   onEdit,
@@ -34,6 +35,7 @@ export const DashboardTemplate = ({
 }) => {
   const [burningInQty, setBurningInQty] = React.useState("");
   const [selectedCategory, setSelectedCategory] = React.useState("");
+  const [filterOpen, setFilterOpen] = React.useState(false);
 
   const serverQty = dailyProd[selectedDate] || 0;
 
@@ -47,6 +49,7 @@ export const DashboardTemplate = ({
     const sDate = String(selectedDate).slice(0, 10);
     return rDate === sDate;
   });
+
   const activeDates = Array.from(
     new Set([
       ...reports.map((r) => r.inspection_date?.slice(0, 10)),
@@ -57,86 +60,312 @@ export const DashboardTemplate = ({
     .sort()
     .reverse();
 
+  const totFail = todayReports.reduce(
+    (a, r) => a + (Number(r.qty_fail) || 0),
+    0,
+  );
+  const totalReports = todayReports.length;
+
   return (
-    <div>
+    <div style={{ paddingBottom: 80 }}>
+      {/* ── Mobile Hero Header ── */}
       <div
+        className="anim-fade-up"
         style={{
-          display: "flex",
-          flexWrap: "wrap",
-          justifyContent: "space-between",
-          alignItems: "center",
-          marginBottom: 16,
-          background: T.surface,
-          padding: "12px 16px",
-          borderRadius: T.r2,
-          border: `1px solid ${T.border}`,
-          gap: 12,
+          borderRadius: 16,
+          padding: "20px 16px 16px",
+          marginBottom: 14,
+          position: "relative",
+          overflow: "hidden",
+          border: isDark
+            ? "1px solid rgba(47,129,247,0.18)"
+            : "1px solid rgba(47,129,247,0.25)",
+          background: isDark
+            ? "linear-gradient(135deg, #0D1117 0%, #1C2330 60%, #1a1f35 100%)"
+            : "linear-gradient(135deg, #EBF4FF 0%, #F0F7FF 60%, #F5EEFF 100%)",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 13, color: T.muted }}>Filter Hari:</span>
-          <DatePicker
-            value={selectedDate}
-            onChange={onDateChange}
-            activeDates={activeDates}
-          />
-          <span style={{ fontSize: 13, color: T.muted, marginLeft: 16 }}>
-            Kategori:
-          </span>
-          <SelectInput
-            value={selectedCategory}
-            onChange={(e) => setSelectedCategory(e)}
-            style={{ width: 140 }}
+        {/* Radial glow */}
+        <div
+          style={{
+            position: "absolute",
+            top: "-40%",
+            right: "-10%",
+            width: 250,
+            height: 250,
+            background: `radial-gradient(circle, ${isDark ? "rgba(47,129,247,0.12)" : "rgba(47,129,247,0.08)"} 0%, transparent 70%)`,
+            pointerEvents: "none",
+          }}
+        />
+
+        {/* Scan line animation */}
+        <div
+          style={{
+            position: "absolute",
+            left: 0,
+            right: 0,
+            height: 1,
+            background:
+              "linear-gradient(90deg, transparent, rgba(47,129,247,0.5), transparent)",
+            animation: "scanLine 3s linear infinite",
+            pointerEvents: "none",
+          }}
+        />
+
+        <div style={{ position: "relative", zIndex: 1 }}>
+          {/* Top row: status badge + date */}
+          <div
+            style={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              marginBottom: 12,
+            }}
           >
-            <option value="">Semua</option>
-            {DEFECT_CATS.map((c) => (
-              <option key={c.v} value={c.v}>
-                {c.v}
-              </option>
-            ))}
-          </SelectInput>
-        </div>
-        <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-          <span style={{ fontSize: 13, color: T.muted }}>Barang Masuk:</span>
-          <TextInput
-            type="number"
-            value={burningInQty}
-            onChange={setBurningInQty}
-            placeholder="+ Tambah Qty..."
-            style={{ width: 125 }}
-          />
-          {canEdit && (
-            <Btn
-              variant="primary"
-              size="sm"
-              onClick={() => {
-                onSaveDailyProd(selectedDate, burningInQty);
-                setBurningInQty("");
+            <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
+              <div
+                style={{
+                  width: 8,
+                  height: 8,
+                  borderRadius: "50%",
+                  background: totFail > 0 ? "#F85149" : "#3FB950",
+                  animation: "pulseRing 2s infinite",
+                }}
+              />
+              <span
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: totFail > 0 ? "#F85149" : "#3FB950",
+                  fontFamily: "'IBM Plex Mono', monospace",
+                  letterSpacing: 1,
+                }}
+              >
+                {totFail > 0 ? `⚠ ${totFail} DEFECT` : "✓ ALL CLEAR"}
+              </span>
+            </div>
+            <span
+              style={{
+                fontSize: 10,
+                color: isDark ? "rgba(125,133,144,0.8)" : "rgba(80,90,110,0.8)",
+                fontFamily: "'IBM Plex Mono', monospace",
               }}
             >
-              Simpan
-            </Btn>
-          )}
+              {selectedDate || "ALL DATES"}
+            </span>
+          </div>
+
+          {/* Main stats row */}
+          <div style={{ display: "flex", gap: 16, alignItems: "flex-end", flexWrap: "wrap" }}>
+            <div>
+              <div style={{ fontSize: 11, color: isDark ? "rgba(125,133,144,0.7)" : "rgba(60,80,110,0.7)",
+                marginBottom: 2, textTransform: "uppercase", letterSpacing: 1 }}>
+                Total Laporan
+              </div>
+              <div style={{ fontSize: 36, fontWeight: 900, color: isDark ? "#E6EDF3" : "#1c2a3a",
+                lineHeight: 1, fontFamily: "'IBM Plex Mono', monospace" }}>
+                {String(totalReports).padStart(2, "0")}
+              </div>
+            </div>
+          </div>
+
+
+          {/* Filter toggle button */}
+          <button
+            onClick={() => setFilterOpen((f) => !f)}
+            style={{
+              marginTop: 12,
+              display: "flex",
+              alignItems: "center",
+              gap: 6,
+              background: "rgba(47,129,247,0.12)",
+              border: "1px solid rgba(47,129,247,0.25)",
+              borderRadius: 20,
+              padding: "5px 12px",
+              color: "#2F81F7",
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer",
+              transition: "all 0.2s",
+            }}
+          >
+            <svg
+              width="13"
+              height="13"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="2.5"
+            >
+              <line x1="4" y1="6" x2="20" y2="6" />
+              <line x1="8" y1="12" x2="16" y2="12" />
+              <line x1="11" y1="18" x2="13" y2="18" />
+            </svg>
+            {filterOpen ? "Tutup Filter" : "Filter & Input"}
+            <span style={{ marginLeft: "auto", fontSize: 10, opacity: 0.7 }}>
+              {filterOpen ? "▲" : "▼"}
+            </span>
+          </button>
         </div>
       </div>
 
+      {/* ── Floating Filter Panel ── */}
+      <div style={{ position: "relative" }}>
+      {filterOpen && (
+        <div
+          className="anim-scale-in"
+          style={{
+            position: "absolute",
+            top: 8,
+            left: 0,
+            right: 0,
+            zIndex: 200,
+            background: T.surface,
+            border: `1px solid ${T.border}`,
+            borderRadius: 12,
+            boxShadow: "0 8px 32px rgba(0,0,0,0.35)",
+          }}
+        >
+          {/* Section: Filter Tanggal & Kategori */}
+          <div style={{ padding: "12px 14px" }}>
+            <div
+              style={{
+                fontSize: 10,
+                fontWeight: 700,
+                color: T.muted,
+                textTransform: "uppercase",
+                letterSpacing: 1,
+                marginBottom: 10,
+                fontFamily: "'IBM Plex Mono', monospace",
+              }}
+            >
+              📅 Filter Data
+            </div>
+
+            {/* Date picker — full width row */}
+            <div style={{ marginBottom: 10 }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  color: T.muted,
+                  fontWeight: 600,
+                  marginBottom: 5,
+                }}
+              >
+                Tanggal:
+              </div>
+              <DatePicker
+                value={selectedDate}
+                onChange={onDateChange}
+                activeDates={activeDates}
+              />
+            </div>
+
+            {/* Category selector — full width row */}
+            <div>
+              <div
+                style={{
+                  fontSize: 11,
+                  color: T.muted,
+                  fontWeight: 600,
+                  marginBottom: 5,
+                }}
+              >
+                Kategori Defect:
+              </div>
+              <SelectInput
+                value={selectedCategory}
+                onChange={(e) => setSelectedCategory(e)}
+                style={{ width: "100%", fontSize: 12 }}
+              >
+                <option value="">Semua Kategori</option>
+                {DEFECT_CATS.map((c) => (
+                  <option key={c.v} value={c.v}>
+                    {c.v}
+                  </option>
+                ))}
+              </SelectInput>
+            </div>
+          </div>
+
+          {/* Section: Input Barang Masuk — visually separated */}
+          {canEdit && (
+            <div
+              style={{
+                borderTop: `2px dashed ${T.border}`,
+                padding: "12px 14px",
+                background: T.surface2,
+              }}
+            >
+              <div
+                style={{
+                  fontSize: 10,
+                  fontWeight: 700,
+                  color: T.muted,
+                  textTransform: "uppercase",
+                  letterSpacing: 1,
+                  marginBottom: 10,
+                  fontFamily: "'IBM Plex Mono', monospace",
+                }}
+              >
+                📦 Input Barang Masuk
+              </div>
+              <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+                <TextInput
+                  type="number"
+                  value={burningInQty}
+                  onChange={setBurningInQty}
+                  placeholder="Masukkan jumlah qty..."
+                  style={{ flex: 1, fontSize: 13 }}
+                />
+                <Btn
+                  variant="primary"
+                  size="sm"
+                  onClick={() => {
+                    onSaveDailyProd(selectedDate, burningInQty);
+                    setBurningInQty("");
+                    setFilterOpen(false);
+                  }}
+                >
+                  💾 Simpan
+                </Btn>
+              </div>
+              <div style={{ fontSize: 10, color: T.muted2, marginTop: 5 }}>
+                Untuk tanggal:{" "}
+                <strong style={{ color: T.blue }}>
+                  {selectedDate || "belum dipilih"}
+                </strong>
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+      </div>
+
+      {/* ── KPI Cards ── */}
+      <div style={{ marginTop: filterOpen ? 14 : 0, transition: "margin-top 0.3s" }}>
       <DashboardKPIs reports={todayReports} burningInQty={serverQty} />
+
+
+      {/* ── Charts ── */}
       <DashboardCharts
         reports={categoryFilteredReports}
         selectedDate={selectedDate}
         burningInQty={serverQty}
       />
+
+      {/* ── Recent Reports Card ── */}
       <Card>
         <CardHeader
-          title={`Laporan QC Terbaru — ${selectedDate || "Semua Tanggal"}`}
+          title={`📋 Laporan — ${selectedDate || "Semua Tanggal"}`}
           actions={
             canEdit && (
-              <div style={{ display: "flex", gap: 8 }}>
+              <div style={{ display: "flex", gap: 6 }}>
                 <Btn variant="blue_outline" size="sm" onClick={onOpenScanner}>
-                  📷 Scan Barcode
+                  📷
                 </Btn>
                 <Btn variant="primary" size="sm" onClick={onNewReport}>
-                  + Laporan Baru
+                  + Baru
                 </Btn>
               </div>
             )
@@ -144,24 +373,40 @@ export const DashboardTemplate = ({
         />
         {todayReports.length === 0 ? (
           <div
+            className="anim-fade-up"
             style={{
               display: "flex",
               flexDirection: "column",
               alignItems: "center",
               justifyContent: "center",
-              padding: "48px 24px",
+              padding: "36px 24px",
               color: T.muted,
-              gap: 12,
+              gap: 10,
             }}
           >
-            <div style={{ fontSize: 42, opacity: 0.5 }}>📋</div>
-            <div style={{ fontWeight: 700, fontSize: 15 }}>
-              Belum ada laporan pada tanggal ini
+            <div
+              style={{
+                width: 56,
+                height: 56,
+                borderRadius: 16,
+                background: T.surface2,
+                border: `1px dashed ${T.border}`,
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "center",
+                fontSize: 24,
+                opacity: 0.6,
+              }}
+            >
+              📋
             </div>
-            <div style={{ fontSize: 13 }}>
-              Laporan QC yang dibuat pada tanggal{" "}
-              <strong style={{ color: T.text }}>{selectedDate}</strong> akan
-              muncul di sini.
+            <div style={{ fontWeight: 700, fontSize: 14, color: T.text }}>
+              Belum ada laporan
+            </div>
+            <div style={{ fontSize: 12, textAlign: "center" }}>
+              Laporan pada{" "}
+              <strong style={{ color: T.blue }}>{selectedDate}</strong> akan
+              muncul di sini
             </div>
             {canEdit && (
               <Btn
@@ -185,9 +430,11 @@ export const DashboardTemplate = ({
           />
         )}
       </Card>
+      </div>
     </div>
   );
 };
+
 
 /** ReportsTemplate — with filter bar */
 export const ReportsTemplate = ({
@@ -251,9 +498,7 @@ export const ReportsTemplate = ({
           marginBottom: 16,
         }}
       >
-        <div
-          className="qc-grid-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[2fr_1.2fr_1.2fr_1.2fr_1.2fr_auto] gap-[10px] items-end"
-        >
+        <div className="qc-grid-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[2fr_1.2fr_1.2fr_1.2fr_1.2fr_auto] gap-[10px] items-end">
           <FilterField label="🔍 Cari">
             <TextInput
               value={search}

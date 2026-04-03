@@ -541,7 +541,7 @@ export const DatePicker = ({ value, onChange, activeDates = [] }) => {
     : "Pilih Tanggal";
 
   return (
-    <div ref={ref} style={{ position: "relative" }}>
+    <div ref={ref} style={{ position: "relative", width: "100%" }}>
       <button
         onClick={() => setOpen((o) => !o)}
         style={{
@@ -550,13 +550,13 @@ export const DatePicker = ({ value, onChange, activeDates = [] }) => {
           borderRadius: T.r,
           color: T.text,
           fontSize: 13,
-          padding: "6px 12px",
+          padding: "8px 12px",
           cursor: "pointer",
           fontFamily: T.font,
           display: "flex",
           alignItems: "center",
           gap: 8,
-          minWidth: 140,
+          width: "100%",
         }}
       >
         📅 {displayLabel}
@@ -571,13 +571,13 @@ export const DatePicker = ({ value, onChange, activeDates = [] }) => {
             position: "absolute",
             top: "calc(100% + 6px)",
             left: 0,
-            zIndex: 999,
+            zIndex: 9999,
             background: T.surface,
             border: `1px solid ${T.border}`,
             borderRadius: T.r2,
             boxShadow: "0 8px 32px rgba(0,0,0,.4)",
             padding: 12,
-            minWidth: 240,
+            minWidth: 260,
           }}
         >
           {/* Month nav */}
