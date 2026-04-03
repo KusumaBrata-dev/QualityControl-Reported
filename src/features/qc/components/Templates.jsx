@@ -494,18 +494,26 @@ export const ReportsTemplate = ({
           background: T.surface,
           border: `1px solid ${T.border}`,
           borderRadius: T.r2,
-          padding: "16px 20px",
-          marginBottom: 16,
+          padding: "12px 14px",
+          marginBottom: 14,
         }}
       >
-        <div className="qc-grid-auto grid grid-cols-1 md:grid-cols-2 lg:grid-cols-[2fr_1.2fr_1.2fr_1.2fr_1.2fr_auto] gap-[10px] items-end">
-          <FilterField label="🔍 Cari">
-            <TextInput
-              value={search}
-              onChange={setSearch}
-              placeholder="Batch / Report No / SN…"
-            />
-          </FilterField>
+        {/* 2-col grid on mobile, 6-col on desktop */}
+        <div style={{
+          display: "grid",
+          gridTemplateColumns: "repeat(2, 1fr)",
+          gap: 8,
+        }}>
+          {/* Search — full width */}
+          <div style={{ gridColumn: "1 / -1" }}>
+            <FilterField label="🔍 Cari">
+              <TextInput
+                value={search}
+                onChange={setSearch}
+                placeholder="Batch / Report No / SN…"
+              />
+            </FilterField>
+          </div>
           <FilterField label="Model">
             <SelectInput
               value={model}
@@ -536,64 +544,133 @@ export const ReportsTemplate = ({
           <FilterField label="Tanggal">
             <TextInput type="date" value={date} onChange={onDateChange} />
           </FilterField>
-          <Btn variant="ghost" size="sm" onClick={reset}>
-            Reset
-          </Btn>
-        </div>
-        <div
-          className="qc-flex-col-mobile"
-          style={{
-            display: "flex",
-            justifyContent: "space-between",
-            alignItems: "center",
-            marginTop: 12,
-            paddingTop: 12,
-            borderTop: `1px solid ${T.border}`,
-          }}
-        >
-          <span style={{ fontSize: 12, color: T.muted }}>
-            Menampilkan {filtered.length} dari {reports.length} laporan
-          </span>
-          <div style={{ display: "flex", gap: 8 }}>
-            <Btn
-              variant="blue_outline"
-              size="sm"
-              onClick={() => onExport(filtered)}
-            >
-              📥 Export Excel
+          {/* Reset full width */}
+          <div style={{ gridColumn: "1 / -1" }}>
+            <Btn variant="ghost" size="sm" onClick={reset} style={{ width: "100%" }}>
+              🔄 Reset Filter
             </Btn>
-            {canEdit && (
-              <>
-                <input
-                  type="file"
-                  accept=".xlsx"
-                  style={{ display: "none" }}
-                  id="excel-import"
-                  onChange={(e) => {
-                    if (e.target.files?.length > 0) {
-                      onImport(e.target.files[0]);
-                      e.target.value = "";
-                    }
-                  }}
-                />
-                <Btn
-                  variant="blue_outline"
-                  size="sm"
-                  onClick={() =>
-                    document.getElementById("excel-import")?.click()
-                  }
-                >
-                  📤 Import Excel
-                </Btn>
-                <Btn variant="blue_outline" size="sm" onClick={onOpenScanner}>
-                  📷 Scan Barcode
-                </Btn>
-                <Btn variant="primary" size="sm" onClick={onNewReport}>
-                  + Laporan Baru
-                </Btn>
-              </>
-            )}
           </div>
+        </div>
+        {/* ── Info row ── */}
+        <div style={{
+          marginTop: 10,
+          paddingTop: 10,
+          borderTop: `1px solid ${T.border}`,
+          fontSize: 12,
+          color: T.muted,
+        }}>
+          Menampilkan <strong style={{ color: T.text }}>{filtered.length}</strong> dari{" "}
+          <strong style={{ color: T.text }}>{reports.length}</strong> laporan
+        </div>
+
+        {/* ── Action buttons — wraps on mobile ── */}
+        <div style={{
+          display: "flex",
+          flexWrap: "wrap",
+          gap: 6,
+          marginTop: 8,
+        }}>
+          {/* hidden file input */}
+          {canEdit && (
+            <input
+              type="file"
+              accept=".xlsx"
+              style={{ display: "none" }}
+              id="excel-import"
+              onChange={(e) => {
+                if (e.target.files?.length > 0) {
+                  onImport(e.target.files[0]);
+                  e.target.value = "";
+                }
+              }}
+            />
+          )}
+
+          {/* Export */}
+          <button
+            onClick={() => onExport(filtered)}
+            style={{
+              display: "flex", alignItems: "center", gap: 5,
+              padding: "7px 11px",
+              background: "transparent",
+              border: `1px solid ${T.border}`,
+              borderRadius: 8,
+              color: T.blue,
+              fontSize: 12,
+              fontWeight: 600,
+              cursor: "pointer",
+              fontFamily: T.font,
+              whiteSpace: "nowrap",
+            }}
+          >
+            📥 <span>Export</span>
+          </button>
+
+          {canEdit && (
+            <>
+              {/* Import */}
+              <button
+                onClick={() => document.getElementById("excel-import")?.click()}
+                style={{
+                  display: "flex", alignItems: "center", gap: 5,
+                  padding: "7px 11px",
+                  background: "transparent",
+                  border: `1px solid ${T.border}`,
+                  borderRadius: 8,
+                  color: T.blue,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  fontFamily: T.font,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                📤 <span>Import</span>
+              </button>
+
+              {/* Scan */}
+              <button
+                onClick={onOpenScanner}
+                style={{
+                  display: "flex", alignItems: "center", gap: 5,
+                  padding: "7px 11px",
+                  background: "transparent",
+                  border: `1px solid ${T.border}`,
+                  borderRadius: 8,
+                  color: T.blue,
+                  fontSize: 12,
+                  fontWeight: 600,
+                  cursor: "pointer",
+                  fontFamily: T.font,
+                  whiteSpace: "nowrap",
+                }}
+              >
+                📷 <span>Scan</span>
+              </button>
+
+              {/* + Baru — full width on very small screens */}
+              <button
+                onClick={onNewReport}
+                style={{
+                  display: "flex", alignItems: "center", gap: 5,
+                  padding: "7px 14px",
+                  background: `linear-gradient(135deg, ${T.blueD}, ${T.blue})`,
+                  border: "none",
+                  borderRadius: 8,
+                  color: "#fff",
+                  fontSize: 12,
+                  fontWeight: 700,
+                  cursor: "pointer",
+                  fontFamily: T.font,
+                  whiteSpace: "nowrap",
+                  boxShadow: "0 2px 8px rgba(47,129,247,0.35)",
+                  marginLeft: "auto",
+                }}
+              >
+                + Laporan Baru
+              </button>
+            </>
+          )}
         </div>
       </div>
       <Card>
