@@ -456,14 +456,14 @@ export const ReportsTemplate = ({
   const [status, setStatus] = useState("");
 
   const colorOpts =
-    model === "WM1091SK"
+    model.startsWith("WM1091")
       ? ["Blue", "Purple"]
-      : model === "WM891SK"
+      : model.startsWith("WM891")
         ? ["Aqua", "Pink"]
         : ["Blue", "Purple", "Aqua", "Pink"];
 
   const filtered = reports.filter((r) => {
-    if (model && r.model !== model) return false;
+    if (model && !r.model?.startsWith(model)) return false;
     if (color && r.color !== color) return false;
     if (status && r.overall_status !== status) return false;
     if (date && !r.inspection_date.startsWith(date)) return false;
@@ -523,8 +523,8 @@ export const ReportsTemplate = ({
               }}
             >
               <option value="">Semua Model</option>
-              <option>WM1091SK</option>
-              <option>WM891SK</option>
+              <option>WM1091</option>
+              <option>WM891</option>
             </SelectInput>
           </FilterField>
           <FilterField label="Warna">

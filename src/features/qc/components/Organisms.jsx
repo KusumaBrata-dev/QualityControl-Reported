@@ -2716,7 +2716,7 @@ export const UserFormOrganism = ({
         <div style={{ flex: 1 }}>
           <div style={{ fontSize: 14, fontWeight: 700 }}>Foto Profil</div>
           <div style={{ fontSize: 12, color: T.muted }}>
-            Rekomendasi ukuran rasio 1:1, Max 2MB.
+            Rekomendasi ukuran rasio 1:1, Max 10MB.
           </div>
           <input
             type="file"

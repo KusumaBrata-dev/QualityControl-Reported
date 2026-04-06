@@ -124,7 +124,7 @@ export const SEED_USERS = [
     username: "ahmad",
     role: "operator",
     password: "Ahmad123op",
-    active: true,
+    active: false,
     created_at: "2025-01-02T00:00:00Z",
   },
   {
@@ -133,7 +133,7 @@ export const SEED_USERS = [
     username: "viewer",
     role: "viewer",
     password: "Viewer123x",
-    active: true,
+    active: false,
     created_at: "2025-01-03T00:00:00Z",
   },
 ];

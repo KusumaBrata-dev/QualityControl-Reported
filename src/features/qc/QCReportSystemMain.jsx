@@ -138,9 +138,10 @@ export default function QCReportSystemMain() {
         // Seed if empty and first load
         if (snap.empty) {
           console.log("Seeding reports...");
-          SEED_REPORTS.forEach((r) =>
-            setDoc(doc(db, "reports", String(r.id)), r),
-          );
+          SEED_REPORTS.forEach((r) => {
+            const reportId = r.serial_numbers?.[0] || `SEED_${r.id}`;
+            setDoc(doc(db, "reports", String(reportId)), { ...r, id: reportId });
+          });
         }
       },
       (err) => {
@@ -161,7 +162,8 @@ export default function QCReportSystemMain() {
         if (snap.empty || !hasAdmin) {
           console.log("Seeding initial users...");
           SEED_USERS.forEach((u) => {
-            setDoc(doc(db, "users", String(u.id)), u).catch((e) =>
+            const userId = u.username.toLowerCase();
+            setDoc(doc(db, "users", userId), { ...u, id: userId }).catch((e) =>
               console.error("Seed fail:", e),
             );
           });
@@ -377,7 +379,9 @@ export default function QCReportSystemMain() {
     async (type, targetId, details = {}) => {
       if (!currentUser) return;
       try {
-        await addDoc(collection(db, "audit_logs"), {
+        const timestampIso = new Date().toISOString();
+        const customId = `${type}_${timestampIso.replace(/[:.]/g, "-")}`;
+        await setDoc(doc(db, "audit_logs", customId), {
           timestamp: serverTimestamp(),
           userId: currentUser.id,
           userName: currentUser.name,
@@ -468,9 +472,27 @@ export default function QCReportSystemMain() {
     if (saving) return;
     setSaving(true);
     const isEdit = !!data.id;
-    const reportId = isEdit ? data.id : doc(collection(db, "reports")).id;
+    
+    // Determine Report ID based on Serial Number
+    let reportId = data.id;
+    if (!isEdit) {
+      const primarySN = data.serial_numbers?.[0];
+      if (primarySN) {
+        reportId = String(primarySN).trim().toUpperCase();
+        // Check for uniqueness if it's a new report
+        const exists = reports.some(r => String(r.id) === reportId);
+        if (exists) {
+          showToast("Serial number sudah terdaftar!", "err");
+          setSaving(false);
+          return;
+        }
+      } else {
+        // Fallback for batch reports without specific SNs
+        reportId = `REP_${new Date().toISOString().replace(/[:.]/g, "-")}`;
+      }
+    }
 
-    // Default approval status for new reports
+    // Default data structure
     const reportData = {
       ...data,
       id: reportId,
@@ -480,7 +502,7 @@ export default function QCReportSystemMain() {
 
     if (!isEdit) {
       reportData.created_by = currentUser.name;
-      reportData.approval_status = "pending"; // Start as pending
+      reportData.approval_status = "pending";
     }
 
     try {
@@ -604,9 +626,7 @@ export default function QCReportSystemMain() {
     if (saving) return;
     setSaving(true);
     const isEdit = !!data.id;
-    const id = isEdit
-      ? data.id
-      : Math.max(0, ...users.map((u) => Number(u.id) || 0)) + 1;
+    const id = isEdit ? data.id : data.username.toLowerCase().trim();
       
     try {
       let avatarUrl = data.avatar || null;
@@ -706,35 +726,57 @@ export default function QCReportSystemMain() {
         return;
       }
 
-      let maxId = Math.max(0, ...reports.map((r) => Number(r.id) || 0));
-      let count = 0;
-
-      showToast(`Mengimport ${data.length} laporan...`);
+      showToast(`Memvalidasi Sn di ${data.length} laporan...`);
       const batch = writeBatch(db);
+      let count = 0;
+      let skipped = 0;
 
       for (const r of data) {
-        maxId++;
+        const primarySN = r.serial_numbers?.[0];
+        const reportId = primarySN 
+          ? String(primarySN).trim().toUpperCase() 
+          : `IMPORT_${new Date().getTime()}_${count}`;
+          
+        // Uniqueness check: check against local reports state
+        const exists = reports.some(rep => String(rep.id) === reportId);
+        if (exists) {
+          skipped++;
+          continue;
+        }
+
         const reportData = {
           ...r,
-          id: maxId,
+          id: reportId,
           created_at: new Date().toISOString(),
           updated_at: new Date().toISOString(),
           created_by: currentUser.name,
           updated_by: currentUser.name,
           approval_status: "pending",
         };
-        batch.set(doc(db, "reports", String(maxId)), reportData);
+        batch.set(doc(db, "reports", reportId), reportData);
         count++;
       }
 
-      await batch.commit();
-      logAction("IMPORT_EXCEL_BATCH", null, { count });
-      showToast(`✅ ${count} Laporan berhasil diimport!`);
+      if (count > 0) {
+        await batch.commit();
+        logAction("IMPORT_EXCEL_BATCH", null, { count, skipped });
+        showToast(`✅ ${count} Laporan diimport${skipped ? `, ${skipped} SN sudah ada` : "!"}`);
+      } else {
+        showToast("Semua SN dari Excel sudah terdaftar!", "err");
+      }
     } catch (e) {
       console.error("Import error:", e);
       showToast(e.message || "Gagal membaca file Excel!", "err");
     }
   };
+
+  // ── Propagation & Filtering ───────────────────
+  const filteredByModel = React.useMemo(() => {
+    if (!activeModel || activeModel === "all") return reports;
+    return reports.filter((r) =>
+      (r.model || "").startsWith(activeModel)
+    );
+  }, [reports, activeModel]);
 
   // ── Render ────────────────────────────────────────
   if (!currentUser)
@@ -799,7 +841,7 @@ export default function QCReportSystemMain() {
         <ErrorBoundary>
           {tab === "dashboard" && (
             <DashboardTemplate
-              reports={reports}
+              reports={filteredByModel}
               canEdit={canEdit}
               dailyProd={dailyProd}
               isDark={isDark}
@@ -815,7 +857,7 @@ export default function QCReportSystemMain() {
           )}
           {tab === "reports" && (
             <ReportsTemplate
-              reports={reports}
+              reports={filteredByModel}
               canEdit={canEdit}
               onDetail={handleDetail}
               onEdit={handleEditReport}
@@ -830,7 +872,7 @@ export default function QCReportSystemMain() {
           )}
           {tab === "matrix" && (
             <MatrixTemplate
-              reports={reports}
+              reports={filteredByModel}
               selectedDate={selectedDate}
               onDateChange={setSelectedDate}
             />
