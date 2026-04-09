@@ -1,0 +1,420 @@
+extend type Mutation {
+  """
+  ✨ Insert a single `DefectCategory` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  defectCategory_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: DefectCategory_Data!
+  ): DefectCategory_KeyOutput! @fdc_generated(from: "DefectCategory", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `InspectionLog` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  inspectionLog_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: InspectionLog_Data!
+  ): InspectionLog_KeyOutput! @fdc_generated(from: "InspectionLog", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `Product` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  product_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: Product_Data!
+  ): Product_KeyOutput! @fdc_generated(from: "Product", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert a single `User` into the table and return its key. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  user_insert(
+    """
+    Data object to insert into the table.
+    """
+    data: User_Data!
+  ): User_KeyOutput! @fdc_generated(from: "User", purpose: INSERT_SINGLE)
+  """
+  ✨ Insert `DefectCategory` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  defectCategory_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [DefectCategory_Data!]!
+  ): [DefectCategory_KeyOutput!]! @fdc_generated(from: "DefectCategory", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `InspectionLog` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  inspectionLog_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [InspectionLog_Data!]!
+  ): [InspectionLog_KeyOutput!]! @fdc_generated(from: "InspectionLog", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `Product` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  product_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [Product_Data!]!
+  ): [Product_KeyOutput!]! @fdc_generated(from: "Product", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert `User` objects into the table and return their keys. Columns not specified in `data` will receive defaults (e.g. `null`).
+  """
+  user_insertMany(
+    """
+    List of data objects to insert into the table.
+    """
+    data: [User_Data!]!
+  ): [User_KeyOutput!]! @fdc_generated(from: "User", purpose: INSERT_MULTIPLE)
+  """
+  ✨ Insert or update a single `DefectCategory` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `DefectCategory`.
+  """
+  defectCategory_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: DefectCategory_Data!
+  ): DefectCategory_KeyOutput! @fdc_generated(from: "DefectCategory", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `InspectionLog` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `InspectionLog`.
+  """
+  inspectionLog_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: InspectionLog_Data!
+  ): InspectionLog_KeyOutput! @fdc_generated(from: "InspectionLog", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `Product` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Product`.
+  """
+  product_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: Product_Data!
+  ): Product_KeyOutput! @fdc_generated(from: "Product", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update a single `User` into the table, based on the primary key. Returns the key of the newly inserted or existing updated `User`.
+  """
+  user_upsert(
+    """
+    Data object to insert or update if it already exists.
+    """
+    data: User_Data!
+  ): User_KeyOutput! @fdc_generated(from: "User", purpose: UPSERT_SINGLE)
+  """
+  ✨ Insert or update `DefectCategory` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `DefectCategory`.
+  """
+  defectCategory_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [DefectCategory_Data!]!
+  ): [DefectCategory_KeyOutput!]! @fdc_generated(from: "DefectCategory", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `InspectionLog` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `InspectionLog`.
+  """
+  inspectionLog_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [InspectionLog_Data!]!
+  ): [InspectionLog_KeyOutput!]! @fdc_generated(from: "InspectionLog", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `Product` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `Product`.
+  """
+  product_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [Product_Data!]!
+  ): [Product_KeyOutput!]! @fdc_generated(from: "Product", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Insert or update `User` objects into the table, based on the primary key. Returns the key of the newly inserted or existing updated `User`.
+  """
+  user_upsertMany(
+    """
+    List of data objects to insert or update if it already exists.
+    """
+    data: [User_Data!]!
+  ): [User_KeyOutput!]! @fdc_generated(from: "User", purpose: UPSERT_MULTIPLE)
+  """
+  ✨ Update a single `DefectCategory` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `DefectCategory` or `null` if not found.
+  """
+  defectCategory_update(
+    """
+    The key used to identify the object.
+    """
+    key: DefectCategory_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: DefectCategory_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: DefectCategory_Data!
+  ): DefectCategory_KeyOutput @fdc_generated(from: "DefectCategory", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `InspectionLog` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `InspectionLog` or `null` if not found.
+  """
+  inspectionLog_update(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: InspectionLog_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: InspectionLog_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: InspectionLog_Data!
+  ): InspectionLog_KeyOutput @fdc_generated(from: "InspectionLog", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `Product` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `Product` or `null` if not found.
+  """
+  product_update(
+    """
+    The key used to identify the object.
+    """
+    key: Product_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Product_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: Product_Data!
+  ): Product_KeyOutput @fdc_generated(from: "Product", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update a single `User` based on `id`, `key` or `first`, setting columns specified in `data`. Returns the key of the updated `User` or `null` if not found.
+  """
+  user_update(
+    """
+    The key used to identify the object.
+    """
+    key: User_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: User_FirstRow
+
+    """
+    Data object containing fields to be updated.
+    """
+    data: User_Data!
+  ): User_KeyOutput @fdc_generated(from: "User", purpose: UPDATE_SINGLE)
+  """
+  ✨ Update `DefectCategory` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  defectCategory_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: DefectCategory_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: DefectCategory_Data!
+  ): Int! @fdc_generated(from: "DefectCategory", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `InspectionLog` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  inspectionLog_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: InspectionLog_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: InspectionLog_Data!
+  ): Int! @fdc_generated(from: "InspectionLog", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `Product` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  product_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: Product_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: Product_Data!
+  ): Int! @fdc_generated(from: "Product", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Update `User` objects matching `where` conditions (or `all`, if true) according to `data`. Returns the number of rows updated.
+  """
+  user_updateMany(
+    """
+    Filter condition to specify which rows to update.
+    """
+    where: User_Filter
+
+    """
+    Set to true to update all rows.
+    """
+    all: Boolean = false
+
+    """
+    Data object containing fields to update.
+    """
+    data: User_Data!
+  ): Int! @fdc_generated(from: "User", purpose: UPDATE_MULTIPLE)
+  """
+  ✨ Delete a single `DefectCategory` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  defectCategory_delete(
+    """
+    The key used to identify the object.
+    """
+    key: DefectCategory_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: DefectCategory_FirstRow
+  ): DefectCategory_KeyOutput @fdc_generated(from: "DefectCategory", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `InspectionLog` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  inspectionLog_delete(
+    """
+    The unique ID of the object.
+    """
+    id: UUID
+
+    """
+    The key used to identify the object.
+    """
+    key: InspectionLog_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: InspectionLog_FirstRow
+  ): InspectionLog_KeyOutput @fdc_generated(from: "InspectionLog", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `Product` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  product_delete(
+    """
+    The key used to identify the object.
+    """
+    key: Product_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: Product_FirstRow
+  ): Product_KeyOutput @fdc_generated(from: "Product", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete a single `User` based on `id`, `key` or `first` and return its key (or `null` if not found).
+  """
+  user_delete(
+    """
+    The key used to identify the object.
+    """
+    key: User_Key
+
+    """
+    Fetch the first row based on the filters and ordering.
+    """
+    first: User_FirstRow
+  ): User_KeyOutput @fdc_generated(from: "User", purpose: DELETE_SINGLE)
+  """
+  ✨ Delete `DefectCategory` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  defectCategory_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: DefectCategory_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "DefectCategory", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `InspectionLog` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  inspectionLog_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: InspectionLog_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "InspectionLog", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `Product` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  product_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: Product_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "Product", purpose: DELETE_MULTIPLE)
+  """
+  ✨ Delete `User` objects matching `where` conditions (or `all`, if true). Returns the number of rows deleted.
+  """
+  user_deleteMany(
+    """
+    Filter condition to specify which rows to delete.
+    """
+    where: User_Filter
+
+    """
+    Set to true to delete all rows.
+    """
+    all: Boolean = false
+  ): Int! @fdc_generated(from: "User", purpose: DELETE_MULTIPLE)
+}

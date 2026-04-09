@@ -1,0 +1,34 @@
+mutation CreateDemoData @transaction @auth(level: USER, insecureReason: "Seed data mutations are typically for internal use or development environments and require authentication.") {
+  user_insertMany(data: [
+    {
+      id: "user-alpha",
+      username: "alphaUser",
+      email: "alpha@example.com",
+      createdAt: "2023-01-01T10:00:00Z"
+    },
+    {
+      id: "user-beta",
+      username: "betaUser",
+      email: "beta@example.com",
+      createdAt: "2023-01-02T11:00:00Z"
+    }
+  ])
+  product_insertMany(data: [
+    {
+      id: "product-101",
+      name: "Wireless Headphones",
+      description: "High-quality audio with noise cancellation.",
+      price: 199.99,
+      stock: 50,
+      sellerId: "user-alpha"
+    },
+    {
+      id: "product-102",
+      name: "Smartwatch",
+      description: "Track your fitness and stay connected.",
+      price: 149.99,
+      stock: 120,
+      sellerId: "user-beta"
+    }
+  ])
+}

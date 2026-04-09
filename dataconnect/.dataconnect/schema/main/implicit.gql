@@ -1,0 +1,14 @@
+extend type InspectionLog {
+  """
+  ✨ Implicit foreign key field based on `InspectionLog`.`defectCategory`. It must match the value of `DefectCategory`.`name`. See `@ref` for how to customize it.
+  """
+  defectCategoryName: String @fdc_generated(from: "InspectionLog.defectCategory", purpose: IMPLICIT_REF_FIELD)
+  """
+  ✨ Implicit foreign key field based on `InspectionLog`.`inspector`. It must match the value of `User`.`username`. See `@ref` for how to customize it.
+  """
+  inspectorUsername: String @fdc_generated(from: "InspectionLog.inspector", purpose: IMPLICIT_REF_FIELD)
+  """
+  ✨ Implicit foreign key field based on `InspectionLog`.`product`. It must match the value of `Product`.`modelNumber`. See `@ref` for how to customize it.
+  """
+  productModelNumber: String @fdc_generated(from: "InspectionLog.product", purpose: IMPLICIT_REF_FIELD)
+}

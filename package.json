@@ -10,6 +10,7 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@dataconnect/generated": "file:src/dataconnect-generated",
     "@tailwindcss/vite": "^4.2.1",
     "exceljs": "^4.4.0",
     "firebase": "^12.11.0",

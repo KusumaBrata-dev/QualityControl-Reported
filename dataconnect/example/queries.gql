@@ -1,0 +1,34 @@
+query ListProducts @auth(level: USER, insecureReason: "Safe for logged in users") {
+  products {
+    modelNumber
+    name
+    description
+  }
+}
+
+mutation CreateProduct($modelNumber: String!, $name: String!, $description: String) @auth(level: USER, insecureReason: "Authenticated users can add products") {
+  product_insert(data: {
+    modelNumber: $modelNumber,
+    name: $name,
+    description: $description
+  })
+}
+
+query ListInspectionLogs @auth(level: USER, insecureReason: "Safe for logged in users") {
+  inspectionLogs {
+    id
+    inspectionDate
+    quantityRejected
+    description
+    product {
+      name
+      modelNumber
+    }
+  }
+}
+
+mutation UpdateProduct($modelNumber: String!, $description: String) @auth(level: USER, insecureReason: "Authenticated users can update products") {
+  product_update(key: {modelNumber: $modelNumber}, data: {
+    description: $description
+  })
+}

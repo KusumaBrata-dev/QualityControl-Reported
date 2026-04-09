@@ -1,0 +1,440 @@
+extend type DefectCategory {
+  """
+  ✨ List `InspectionLog` objects in a one-to-many relationship (where `InspectionLog`.`defectCategory` is this object).
+  """
+  inspectionLogs_on_defectCategory(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: InspectionLog_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [InspectionLog_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: InspectionLog_Having
+  ): [InspectionLog!]! @fdc_generated(from: "InspectionLog.defectCategory", purpose: QUERY_MULTIPLE_ONE_TO_MANY)
+  """
+  Implicit metadata field that cannot be written. It provides extra information about query results.
+  """
+  _metadata: _Metadata @fdc_generated(from: "DefectCategory", purpose: METADATA_FIELD)
+  """
+  ✨ Count the number of rows in the `DefectCategory` table.
+  """
+  _count: Int! @fdc_generated(from: "DefectCategory.", purpose: QUERY_COUNT)
+  """
+  ✨ Count the number of rows in the `DefectCategory` table where the `createdAt` field is non-null. Pass the `distinct` argument to instead count the number of distinct values.
+  """
+  createdAt_count(
+    """
+    Set to true to count the number of distinct values.
+    """
+    distinct: Boolean = false
+  ): Int! @fdc_generated(from: "DefectCategory.createdAt", purpose: QUERY_COUNT)
+  """
+  ✨ Count the number of rows in the `DefectCategory` table where the `description` field is non-null. Pass the `distinct` argument to instead count the number of distinct values.
+  """
+  description_count(
+    """
+    Set to true to count the number of distinct values.
+    """
+    distinct: Boolean = false
+  ): Int! @fdc_generated(from: "DefectCategory.description", purpose: QUERY_COUNT)
+  """
+  ✨ Count the number of rows in the `DefectCategory` table where the `name` field is non-null. Pass the `distinct` argument to instead count the number of distinct values.
+  """
+  name_count(
+    """
+    Set to true to count the number of distinct values.
+    """
+    distinct: Boolean = false
+  ): Int! @fdc_generated(from: "DefectCategory.name", purpose: QUERY_COUNT)
+  """
+  ✨ Minimum of the `createdAt` field in the `DefectCategory` table.
+  """
+  createdAt_min: Timestamp @fdc_generated(from: "DefectCategory.createdAt", purpose: QUERY_MIN)
+  """
+  ✨ Maximum of the `createdAt` field in the `DefectCategory` table.
+  """
+  createdAt_max: Timestamp @fdc_generated(from: "DefectCategory.createdAt", purpose: QUERY_MAX)
+  """
+  A generated field that is used for caching results in SDKs.
+  """
+  _id: ID! @fdc_generated(from: "DefectCategory.name", purpose: ENTITY_ID)
+}
+extend type InspectionLog {
+  """
+  Implicit metadata field that cannot be written. It provides extra information about query results.
+  """
+  _metadata: _Metadata @fdc_generated(from: "InspectionLog", purpose: METADATA_FIELD)
+  """
+  ✨ Count the number of rows in the `InspectionLog` table.
+  """
+  _count: Int! @fdc_generated(from: "InspectionLog.", purpose: QUERY_COUNT)
+  """
+  ✨ Count the number of rows in the `InspectionLog` table where the `createdAt` field is non-null. Pass the `distinct` argument to instead count the number of distinct values.
+  """
+  createdAt_count(
+    """
+    Set to true to count the number of distinct values.
+    """
+    distinct: Boolean = false
+  ): Int! @fdc_generated(from: "InspectionLog.createdAt", purpose: QUERY_COUNT)
+  """
+  ✨ Count the number of rows in the `InspectionLog` table where the `defectCategoryName` field is non-null. Pass the `distinct` argument to instead count the number of distinct values.
+  """
+  defectCategoryName_count(
+    """
+    Set to true to count the number of distinct values.
+    """
+    distinct: Boolean = false
+  ): Int! @fdc_generated(from: "InspectionLog.defectCategoryName", purpose: QUERY_COUNT)
+  """
+  ✨ Count the number of rows in the `InspectionLog` table where the `description` field is non-null. Pass the `distinct` argument to instead count the number of distinct values.
+  """
+  description_count(
+    """
+    Set to true to count the number of distinct values.
+    """
+    distinct: Boolean = false
+  ): Int! @fdc_generated(from: "InspectionLog.description", purpose: QUERY_COUNT)
+  """
+  ✨ Count the number of rows in the `InspectionLog` table where the `id` field is non-null. Pass the `distinct` argument to instead count the number of distinct values.
+  """
+  id_count(
+    """
+    Set to true to count the number of distinct values.
+    """
+    distinct: Boolean = false
+  ): Int! @fdc_generated(from: "InspectionLog.id", purpose: QUERY_COUNT)
+  """
+  ✨ Count the number of rows in the `InspectionLog` table where the `inspectionDate` field is non-null. Pass the `distinct` argument to instead count the number of distinct values.
+  """
+  inspectionDate_count(
+    """
+    Set to true to count the number of distinct values.
+    """
+    distinct: Boolean = false
+  ): Int! @fdc_generated(from: "InspectionLog.inspectionDate", purpose: QUERY_COUNT)
+  """
+  ✨ Count the number of rows in the `InspectionLog` table where the `inspectorUsername` field is non-null. Pass the `distinct` argument to instead count the number of distinct values.
+  """
+  inspectorUsername_count(
+    """
+    Set to true to count the number of distinct values.
+    """
+    distinct: Boolean = false
+  ): Int! @fdc_generated(from: "InspectionLog.inspectorUsername", purpose: QUERY_COUNT)
+  """
+  ✨ Count the number of rows in the `InspectionLog` table where the `notes` field is non-null. Pass the `distinct` argument to instead count the number of distinct values.
+  """
+  notes_count(
+    """
+    Set to true to count the number of distinct values.
+    """
+    distinct: Boolean = false
+  ): Int! @fdc_generated(from: "InspectionLog.notes", purpose: QUERY_COUNT)
+  """
+  ✨ Count the number of rows in the `InspectionLog` table where the `productModelNumber` field is non-null. Pass the `distinct` argument to instead count the number of distinct values.
+  """
+  productModelNumber_count(
+    """
+    Set to true to count the number of distinct values.
+    """
+    distinct: Boolean = false
+  ): Int! @fdc_generated(from: "InspectionLog.productModelNumber", purpose: QUERY_COUNT)
+  """
+  ✨ Count the number of rows in the `InspectionLog` table where the `quantityRejected` field is non-null. Pass the `distinct` argument to instead count the number of distinct values.
+  """
+  quantityRejected_count(
+    """
+    Set to true to count the number of distinct values.
+    """
+    distinct: Boolean = false
+  ): Int! @fdc_generated(from: "InspectionLog.quantityRejected", purpose: QUERY_COUNT)
+  """
+  ✨ Count the number of rows in the `InspectionLog` table where the `severity` field is non-null. Pass the `distinct` argument to instead count the number of distinct values.
+  """
+  severity_count(
+    """
+    Set to true to count the number of distinct values.
+    """
+    distinct: Boolean = false
+  ): Int! @fdc_generated(from: "InspectionLog.severity", purpose: QUERY_COUNT)
+  """
+  ✨ Sum the `quantityRejected` field in the `InspectionLog` table.
+  """
+  quantityRejected_sum(
+    """
+    Set to true to sum the distinct values.
+    """
+    distinct: Boolean = false
+  ): Int @fdc_generated(from: "InspectionLog.quantityRejected", purpose: QUERY_SUM)
+  """
+  ✨ Average the `quantityRejected` field in the `InspectionLog` table.
+  """
+  quantityRejected_avg(
+    """
+    Set to true to average the distinct values.
+    """
+    distinct: Boolean = false
+  ): Float @fdc_generated(from: "InspectionLog.quantityRejected", purpose: QUERY_AVG)
+  """
+  ✨ Minimum of the `createdAt` field in the `InspectionLog` table.
+  """
+  createdAt_min: Timestamp @fdc_generated(from: "InspectionLog.createdAt", purpose: QUERY_MIN)
+  """
+  ✨ Minimum of the `inspectionDate` field in the `InspectionLog` table.
+  """
+  inspectionDate_min: Date @fdc_generated(from: "InspectionLog.inspectionDate", purpose: QUERY_MIN)
+  """
+  ✨ Minimum of the `quantityRejected` field in the `InspectionLog` table.
+  """
+  quantityRejected_min: Int @fdc_generated(from: "InspectionLog.quantityRejected", purpose: QUERY_MIN)
+  """
+  ✨ Maximum of the `createdAt` field in the `InspectionLog` table.
+  """
+  createdAt_max: Timestamp @fdc_generated(from: "InspectionLog.createdAt", purpose: QUERY_MAX)
+  """
+  ✨ Maximum of the `inspectionDate` field in the `InspectionLog` table.
+  """
+  inspectionDate_max: Date @fdc_generated(from: "InspectionLog.inspectionDate", purpose: QUERY_MAX)
+  """
+  ✨ Maximum of the `quantityRejected` field in the `InspectionLog` table.
+  """
+  quantityRejected_max: Int @fdc_generated(from: "InspectionLog.quantityRejected", purpose: QUERY_MAX)
+  """
+  A generated field that is used for caching results in SDKs.
+  """
+  _id: ID! @fdc_generated(from: "InspectionLog.id", purpose: ENTITY_ID)
+}
+extend type Product {
+  """
+  ✨ List `InspectionLog` objects in a one-to-many relationship (where `InspectionLog`.`product` is this object).
+  """
+  inspectionLogs_on_product(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: InspectionLog_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [InspectionLog_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: InspectionLog_Having
+  ): [InspectionLog!]! @fdc_generated(from: "InspectionLog.product", purpose: QUERY_MULTIPLE_ONE_TO_MANY)
+  """
+  Implicit metadata field that cannot be written. It provides extra information about query results.
+  """
+  _metadata: _Metadata @fdc_generated(from: "Product", purpose: METADATA_FIELD)
+  """
+  ✨ Count the number of rows in the `Product` table.
+  """
+  _count: Int! @fdc_generated(from: "Product.", purpose: QUERY_COUNT)
+  """
+  ✨ Count the number of rows in the `Product` table where the `createdAt` field is non-null. Pass the `distinct` argument to instead count the number of distinct values.
+  """
+  createdAt_count(
+    """
+    Set to true to count the number of distinct values.
+    """
+    distinct: Boolean = false
+  ): Int! @fdc_generated(from: "Product.createdAt", purpose: QUERY_COUNT)
+  """
+  ✨ Count the number of rows in the `Product` table where the `description` field is non-null. Pass the `distinct` argument to instead count the number of distinct values.
+  """
+  description_count(
+    """
+    Set to true to count the number of distinct values.
+    """
+    distinct: Boolean = false
+  ): Int! @fdc_generated(from: "Product.description", purpose: QUERY_COUNT)
+  """
+  ✨ Count the number of rows in the `Product` table where the `manufacturer` field is non-null. Pass the `distinct` argument to instead count the number of distinct values.
+  """
+  manufacturer_count(
+    """
+    Set to true to count the number of distinct values.
+    """
+    distinct: Boolean = false
+  ): Int! @fdc_generated(from: "Product.manufacturer", purpose: QUERY_COUNT)
+  """
+  ✨ Count the number of rows in the `Product` table where the `modelNumber` field is non-null. Pass the `distinct` argument to instead count the number of distinct values.
+  """
+  modelNumber_count(
+    """
+    Set to true to count the number of distinct values.
+    """
+    distinct: Boolean = false
+  ): Int! @fdc_generated(from: "Product.modelNumber", purpose: QUERY_COUNT)
+  """
+  ✨ Count the number of rows in the `Product` table where the `name` field is non-null. Pass the `distinct` argument to instead count the number of distinct values.
+  """
+  name_count(
+    """
+    Set to true to count the number of distinct values.
+    """
+    distinct: Boolean = false
+  ): Int! @fdc_generated(from: "Product.name", purpose: QUERY_COUNT)
+  """
+  ✨ Minimum of the `createdAt` field in the `Product` table.
+  """
+  createdAt_min: Timestamp @fdc_generated(from: "Product.createdAt", purpose: QUERY_MIN)
+  """
+  ✨ Maximum of the `createdAt` field in the `Product` table.
+  """
+  createdAt_max: Timestamp @fdc_generated(from: "Product.createdAt", purpose: QUERY_MAX)
+  """
+  A generated field that is used for caching results in SDKs.
+  """
+  _id: ID! @fdc_generated(from: "Product.modelNumber", purpose: ENTITY_ID)
+}
+extend type User {
+  """
+  ✨ List `InspectionLog` objects in a one-to-many relationship (where `InspectionLog`.`inspector` is this object).
+  """
+  inspectionLogs_on_inspector(
+    """
+    Filter condition to narrow down the query results.
+    """
+    where: InspectionLog_Filter
+
+    """
+    Order the query results by specific fields.
+    """
+    orderBy: [InspectionLog_Order!]
+
+    """
+    Number of rows to skip before starting to return the results.
+    """
+    offset: Int
+
+    """
+    Maximum number of rows to return (defaults to 100 rows).
+    """
+    limit: Int = 100
+
+    """
+    Set to true to return distinct results.
+    """
+    distinct: Boolean = false
+
+    """
+    Filter condition to apply to the groups of aggregate queries.
+    """
+    having: InspectionLog_Having
+  ): [InspectionLog!]! @fdc_generated(from: "InspectionLog.inspector", purpose: QUERY_MULTIPLE_ONE_TO_MANY)
+  """
+  Implicit metadata field that cannot be written. It provides extra information about query results.
+  """
+  _metadata: _Metadata @fdc_generated(from: "User", purpose: METADATA_FIELD)
+  """
+  ✨ Count the number of rows in the `User` table.
+  """
+  _count: Int! @fdc_generated(from: "User.", purpose: QUERY_COUNT)
+  """
+  ✨ Count the number of rows in the `User` table where the `createdAt` field is non-null. Pass the `distinct` argument to instead count the number of distinct values.
+  """
+  createdAt_count(
+    """
+    Set to true to count the number of distinct values.
+    """
+    distinct: Boolean = false
+  ): Int! @fdc_generated(from: "User.createdAt", purpose: QUERY_COUNT)
+  """
+  ✨ Count the number of rows in the `User` table where the `email` field is non-null. Pass the `distinct` argument to instead count the number of distinct values.
+  """
+  email_count(
+    """
+    Set to true to count the number of distinct values.
+    """
+    distinct: Boolean = false
+  ): Int! @fdc_generated(from: "User.email", purpose: QUERY_COUNT)
+  """
+  ✨ Count the number of rows in the `User` table where the `fullName` field is non-null. Pass the `distinct` argument to instead count the number of distinct values.
+  """
+  fullName_count(
+    """
+    Set to true to count the number of distinct values.
+    """
+    distinct: Boolean = false
+  ): Int! @fdc_generated(from: "User.fullName", purpose: QUERY_COUNT)
+  """
+  ✨ Count the number of rows in the `User` table where the `phoneNumber` field is non-null. Pass the `distinct` argument to instead count the number of distinct values.
+  """
+  phoneNumber_count(
+    """
+    Set to true to count the number of distinct values.
+    """
+    distinct: Boolean = false
+  ): Int! @fdc_generated(from: "User.phoneNumber", purpose: QUERY_COUNT)
+  """
+  ✨ Count the number of rows in the `User` table where the `role` field is non-null. Pass the `distinct` argument to instead count the number of distinct values.
+  """
+  role_count(
+    """
+    Set to true to count the number of distinct values.
+    """
+    distinct: Boolean = false
+  ): Int! @fdc_generated(from: "User.role", purpose: QUERY_COUNT)
+  """
+  ✨ Count the number of rows in the `User` table where the `username` field is non-null. Pass the `distinct` argument to instead count the number of distinct values.
+  """
+  username_count(
+    """
+    Set to true to count the number of distinct values.
+    """
+    distinct: Boolean = false
+  ): Int! @fdc_generated(from: "User.username", purpose: QUERY_COUNT)
+  """
+  ✨ Minimum of the `createdAt` field in the `User` table.
+  """
+  createdAt_min: Timestamp @fdc_generated(from: "User.createdAt", purpose: QUERY_MIN)
+  """
+  ✨ Maximum of the `createdAt` field in the `User` table.
+  """
+  createdAt_max: Timestamp @fdc_generated(from: "User.createdAt", purpose: QUERY_MAX)
+  """
+  A generated field that is used for caching results in SDKs.
+  """
+  _id: ID! @fdc_generated(from: "User.username", purpose: ENTITY_ID)
+}

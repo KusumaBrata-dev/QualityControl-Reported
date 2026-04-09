@@ -1,0 +1,26 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // Quality Control Reports
+    match /reports/{reportId} {
+      allow read, write: if true; 
+    }
+    
+    // User Profiles and Roles
+    match /users/{userId} {
+      allow read, write: if true;
+    }
+    
+    // Production tracking data
+    match /daily_production/{docId} {
+      allow read, write: if true;
+    }
+
+    // Default catch-all rule with expiration for security
+    match /{document=**} {
+      allow read, write: if request.time < timestamp.date(2026, 4, 30);
+    }
+  }
+}

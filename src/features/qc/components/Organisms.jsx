@@ -1765,7 +1765,7 @@ export const ReportFormOrganism = ({
       // Upload images to Firebase Storage (returns empty array if imgList is empty)
       const imageUrls = await uploadReportImages(imgList, reportId);
 
-      onSave({
+      await onSave({
         ...(editReport
           ? { id: editReport.id, created_at: editReport.created_at }
           : { created_at: new Date().toISOString() }),
@@ -1791,6 +1791,7 @@ export const ReportFormOrganism = ({
         images: imageUrls,
         checkpoints: cpState.map((c) => ({ ...c })),
       });
+    } catch (e) {
       showToast(e.message || "Gagal menyimpan laporan!", "err");
       console.error(e);
     } finally {

@@ -1,0 +1,36 @@
+type User @table(key: "username") {
+  username: String!
+  email: String!
+  role: String! # Using String for enum due to lack of enum support
+  createdAt: Timestamp! @default(expr: "request.time")
+  fullName: String
+  phoneNumber: String
+}
+
+type Product @table(key: "modelNumber") {
+  modelNumber: String!
+  name: String!
+  createdAt: Timestamp! @default(expr: "request.time")
+  description: String
+  manufacturer: String
+}
+
+type DefectCategory @table(key: "name") {
+  name: String!
+  description: String!
+  createdAt: Timestamp! @default(expr: "request.time")
+}
+
+type InspectionLog @table {
+  id: UUID! @default(expr: "uuidV4()")
+  inspector: User # Belongs To User (Inspector)
+  product: Product # Belongs To Product
+  defectCategory: DefectCategory # Belongs To DefectCategory
+  inspectionDate: Date! @default(expr: "request.time")
+  quantityRejected: Int!
+  description: String!
+  createdAt: Timestamp! @default(expr: "request.time")
+  severity: String # Using String for enum due to lack of enum support
+  notes: String
+  photos: [String] # Array of URLs
+}

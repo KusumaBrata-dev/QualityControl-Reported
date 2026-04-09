@@ -28,8 +28,36 @@ export async function uploadReportImages(images, reportId) {
     }
 
     const fileRef = ref(storage, `reports/${reportId}/img_${Date.now()}_${index}`);
+    
+    // REDIRECT TO LOCAL NAS BRIDGE IF IN DEVELOPMENT
+    if (import.meta.env.DEV) {
+      try {
+        const formData = new FormData();
+        formData.append("photo", blob);
+        formData.append("reportId", reportId);
+
+        // Fetch project ID from env (matching firebase.js logic)
+        const projectId = import.meta.env.VITE_FIREBASE_PROJECT_ID || "qcreportsystem";
+        const bridgeUrl = `http://127.0.0.1:5001/${projectId}/us-central1/localBridge`;
+
+        const response = await fetch(`${bridgeUrl}/upload`, {
+          method: "POST",
+          body: formData
+        });
+
+        if (response.ok) {
+          const result = await response.json();
+          // Prepend bridge URL to the relative path returned
+          return `${bridgeUrl}${result.url}`;
+        }
+      } catch (err) {
+        console.warn("Failed to upload to Local NAS, failing back to Firebase Storage:", err);
+      }
+    }
+
     const snapshot = await uploadBytes(fileRef, blob);
     return await getDownloadURL(snapshot.ref);
+
   });
 
   const urls = await Promise.all(uploadPromises);
