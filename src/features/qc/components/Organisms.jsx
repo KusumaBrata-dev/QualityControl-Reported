@@ -242,7 +242,7 @@ export const LoginOrganism = ({ users, onLogin, dbStats }) => {
             color: T.muted2,
           }}
         >
-          QC Report System V2.1.1
+          QC Report System V2.2.7
         </div>
       </div>
     </div>
@@ -374,15 +374,24 @@ export const NavbarOrganism = ({
 
 /** DashboardKPIs — animated 2x2 mobile grid */
 export const DashboardKPIs = ({ reports, burningInQty }) => {
-  const approvedReports = reports.filter((r) => r.approval_status === "approved");
+  const approvedReports = reports.filter(
+    (r) => r.approval_status === "approved",
+  );
   const totFail = reports.reduce((a, r) => a + (Number(r.qty_fail) || 0), 0);
-  const totPassApproved = approvedReports.reduce((a, r) => a + (Number(r.qty_pass) || 0), 0);
-  const totFailApproved = approvedReports.reduce((a, r) => a + (Number(r.qty_fail) || 0), 0);
+  const totPassApproved = approvedReports.reduce(
+    (a, r) => a + (Number(r.qty_pass) || 0),
+    0,
+  );
+  const totFailApproved = approvedReports.reduce(
+    (a, r) => a + (Number(r.qty_fail) || 0),
+    0,
+  );
   const totInsp = totPassApproved + totFailApproved;
 
   // Use approved data for Rate to avoid Infinity/skewed math if Inspeksi is 0
   const baseQty = burningInQty > 0 ? burningInQty : totInsp;
-  const drRate = baseQty > 0 ? ((totFailApproved / baseQty) * 100).toFixed(2) : "0.00";
+  const drRate =
+    baseQty > 0 ? ((totFailApproved / baseQty) * 100).toFixed(2) : "0.00";
   const drNum = parseFloat(drRate);
 
   const kpis = [
@@ -1739,7 +1748,7 @@ export const ReportFormOrganism = ({
 
   const handleSave = async () => {
     if (isUploading) return;
-    
+
     if (!form.product_id || !form.batch_no) {
       showToast("Produk dan Batch wajib diisi!", "err");
       return;
@@ -1754,7 +1763,7 @@ export const ReportFormOrganism = ({
     setIsUploading(true);
     setUploadStatus("Memproses...");
     showToast("⌛ Sedang memproses...", "ok");
-    
+
     try {
       const prod = PRODUCTS[form.product_id];
       if (!prod) throw new Error("Produk tidak ditemukan");
@@ -1770,9 +1779,13 @@ export const ReportFormOrganism = ({
 
       setUploadStatus("Mengunggah Foto...");
       // Upload images to Firebase Storage (returns empty array if imgList is empty)
-      const imageUrls = await uploadReportImages(imgList, reportId, (current, total) => {
-        setUploadStatus(`Unggah Foto ${current}/${total}...`);
-      });
+      const imageUrls = await uploadReportImages(
+        imgList,
+        reportId,
+        (current, total) => {
+          setUploadStatus(`Unggah Foto ${current}/${total}...`);
+        },
+      );
 
       setUploadStatus("Menyimpan Data...");
       await onSave({
