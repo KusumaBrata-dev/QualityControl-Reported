@@ -1673,6 +1673,7 @@ export const ReportFormOrganism = ({
   const [pickerOpen, setPickerOpen] = useState(false);
   const [imgList, setImgList] = useState([]); // Base64 or URLs
   const [isUploading, setIsUploading] = useState(false);
+  const [uploadStatus, setUploadStatus] = useState("");
 
   useEffect(() => {
     if (!open) return;
@@ -1737,6 +1738,8 @@ export const ReportFormOrganism = ({
   };
 
   const handleSave = async () => {
+    if (isUploading) return;
+    
     if (!form.product_id || !form.batch_no) {
       showToast("Produk dan Batch wajib diisi!", "err");
       return;
@@ -1749,6 +1752,9 @@ export const ReportFormOrganism = ({
     }
 
     setIsUploading(true);
+    setUploadStatus("Memproses...");
+    showToast("⌛ Sedang memproses...", "ok");
+    
     try {
       const prod = PRODUCTS[form.product_id];
       if (!prod) throw new Error("Produk tidak ditemukan");
@@ -1762,9 +1768,13 @@ export const ReportFormOrganism = ({
 
       const reportId = editReport ? editReport.id : `new_${Date.now()}`;
 
+      setUploadStatus("Mengunggah Foto...");
       // Upload images to Firebase Storage (returns empty array if imgList is empty)
-      const imageUrls = await uploadReportImages(imgList, reportId);
+      const imageUrls = await uploadReportImages(imgList, reportId, (current, total) => {
+        setUploadStatus(`Unggah Foto ${current}/${total}...`);
+      });
 
+      setUploadStatus("Menyimpan Data...");
       await onSave({
         ...(editReport
           ? { id: editReport.id, created_at: editReport.created_at }
@@ -1811,8 +1821,8 @@ export const ReportFormOrganism = ({
           <Btn variant="ghost" onClick={onClose}>
             Batal
           </Btn>
-          <Btn variant="success" onClick={handleSave}>
-            💾 Simpan Laporan
+          <Btn variant="success" onClick={handleSave} disabled={isUploading}>
+            {isUploading ? `⏳ ${uploadStatus}` : "💾 Simpan Laporan"}
           </Btn>
         </>
       }

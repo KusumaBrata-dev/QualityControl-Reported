@@ -1,5 +1,7 @@
 {
-  "projects": {},
+  "projects": {
+    "default": "qcreportsystem"
+  },
   "targets": {},
   "etags": {}
 }

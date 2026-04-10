@@ -7,44 +7,63 @@ const fse = require("fs-extra");
 const path = require("path");
 
 const app = express();
+// Increase limit for large photos
+app.use(express.json({ limit: "50mb" }));
+app.use(express.urlencoded({ limit: "50mb", extended: true }));
 app.use(cors({ origin: true }));
 
-// Target NAS Path
 const NAS_PATH = "\\\\10.0.0.8\\home\\QCSystem";
+const LOCAL_PATH = path.join(__dirname, "photos");
 
+async function getActivePath() {
+  await fse.ensureDir(LOCAL_PATH);
+  return LOCAL_PATH;
+}
 
-
-// Setup multer for memory storage
-const upload = multer({ storage: multer.memoryStorage() });
-
-setGlobalOptions({ maxInstances: 10 });
+// Setup multer (limit 50MB per file)
+const upload = multer({ 
+  storage: multer.memoryStorage(),
+  limits: { fileSize: 50 * 1024 * 1024 } 
+});
 
 /**
  * Endpoint to upload photos to the local NAS share
  */
-app.post("/upload", upload.single("photo"), async (req, res) => {
+app.post("/upload", (req, res, next) => {
+  console.log("📥 NEW UPLOAD REQUEST RECEIVED");
+  next();
+}, upload.single("photo"), async (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ error: "No file uploaded" });
-
-    const fileName = `img_${Date.now()}_${req.body.reportId || "unknown"}.jpg`;
-    const targetFilePath = path.join(NAS_PATH, fileName);
-
-    // Ensure target directoy exists (requires NAS connection)
-    await fse.ensureDir(NAS_PATH);
+    console.log("🧪 Multer finished processing. File:", req.file ? req.file.originalname : "NONE");
     
-    // Write the buffer to the NAS
-    await fse.writeFile(targetFilePath, req.file.buffer);
+    if (!req.file) {
+      console.warn("⚠️ No file in request");
+      return res.status(400).json({ error: "No file uploaded" });
+    }
 
-    // Return the URL that points back to this function to serve the file
-    // Note: In emulator, the URL structure is usually http://127.0.0.1:5001/project-id/us-central1/localBridge/photos/filename
+    const safeId = String(req.body.reportId || "unknown").replace(/[^a-z0-9_\-]/gi, "_");
+    const fileName = `img_${Date.now()}_${safeId}.jpg`;
+    const activePath = await getActivePath();
+    const targetFilePath = path.join(activePath, fileName);
+
+    console.log("💾 Saving to:", targetFilePath);
+    await fse.writeFile(targetFilePath, req.file.buffer);
+    console.log("✅ File saved successfully");
+
+    const timeoutPromise = new Promise((_, reject) => 
+      setTimeout(() => reject(new Error("NAS Write Timeout")), 5000)
+    );
+
+    await Promise.race([writePromise, timeoutPromise]);
+
     res.status(200).json({
       success: true,
       fileName,
-      url: `/localBridge/photos/${fileName}` // Relative URL for frontend to handle
+      url: `/localBridge/photos/${fileName}`
     });
   } catch (error) {
-    console.error("NAS Upload Error:", error);
-    res.status(500).json({ error: "Failed to save to NAS", details: error.message });
+    console.error("Bridge Error:", error.message);
+    res.status(500).json({ error: "Bridge failed", details: error.message });
   }
 });
 
@@ -53,7 +72,8 @@ app.post("/upload", upload.single("photo"), async (req, res) => {
  */
 app.get("/photos/:name", async (req, res) => {
   try {
-    const targetFilePath = path.join(NAS_PATH, req.params.name);
+    const activePath = await getActivePath();
+    const targetFilePath = path.join(activePath, req.params.name);
     
     if (await fse.pathExists(targetFilePath)) {
       res.sendFile(targetFilePath);

@@ -13,7 +13,23 @@ const firebaseConfig = {
 
 const app = initializeApp(firebaseConfig);
 export const db = getFirestore(app);
-export const storage = getStorage(app); // INSPECTORS removed as per user request (Shift & Inspector fields deleted)
+export const storage = getStorage(app);
+
+// Use Emulators ONLY if VITE_USE_EMULATORS=true is set in .env
+if (import.meta.env.VITE_USE_EMULATORS === "true") {
+  const { connectFirestoreEmulator } = await import("firebase/firestore");
+  const { connectStorageEmulator } = await import("firebase/storage");
+  
+  try {
+    connectFirestoreEmulator(db, "127.0.0.1", 8080);
+    connectStorageEmulator(storage, "127.0.0.1", 9199);
+    console.log("🛠️ Connected to Firebase Emulators");
+  } catch (e) {
+    console.warn("Emulators could not be connected.", e);
+  }
+} else {
+  console.log("🌐 Connected to Production Firebase");
+}
 
 export const DEFECT_CATS = [
   { v: "DS01", l: "DL01 – Lecet A" },

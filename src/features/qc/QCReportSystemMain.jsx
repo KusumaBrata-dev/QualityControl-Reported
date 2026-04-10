@@ -469,8 +469,12 @@ export default function QCReportSystemMain() {
     });
   };
   const handleSaveReport = async (data) => {
-    if (saving) return;
+    if (saving) {
+      showToast("Tunggu sebentar, proses simpan sedang berjalan...", "err");
+      return;
+    }
     setSaving(true);
+    showToast("💾 Menghubungkan ke database...", "ok");
     const isEdit = !!data.id;
     
     // Determine Report ID based on Serial Number
