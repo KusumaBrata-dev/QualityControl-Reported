@@ -23,7 +23,8 @@ import {
 import Footer from "../../components/Footer";
 import { exportToExcel } from "./utils/exportUtils";
 import { parseExcelImport } from "./utils/importUtils";
-import { uploadUserAvatar } from "./utils/storageUtils";
+import { uploadUserAvatar, uploadReportImages } from "./utils/storageUtils";
+import { compressImage, blobToBase64 } from "./utils/imageUtils";
 import { db } from "../../firebase";
 import {
   collection,
@@ -228,7 +229,13 @@ export default function QCReportSystemMain() {
           100% { box-shadow: 0 0 0 0 rgba(163, 113, 247, 0.0); }
         }
 
-        /* ── Anti-zoom: iOS forces zoom when input font-size < 16px ── */
+        /* Smooth transitions */
+        .anim-fade-up { animation: fadeUp 0.5s ease forwards; opacity: 0; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+        
+        .qc-root .card-hover:hover { transform: translateY(-2px); box-shadow: 0 12px 24px rgba(0,0,0,0.2); transition: all 0.3s ease; }
+
+        /* Anti-zoom: iOS forces zoom when input font-size < 16px */
         .qc-root input, .qc-root select, .qc-root textarea {
           font-size: 16px !important;
           touch-action: manipulation;
@@ -239,6 +246,17 @@ export default function QCReportSystemMain() {
         html, body { overscroll-behavior: none; -webkit-overflow-scrolling: touch; }
         /* Safe area for iPhone X notch bottom */
         .qc-bottom-nav { padding-bottom: env(safe-area-inset-bottom) !important; }
+        
+        /* Premium Scrollbar */
+        .qc-root ::-webkit-scrollbar { width: 6px; }
+        .qc-root ::-webkit-scrollbar-thumb { background: ${T.border}; border-radius: 10px; }
+        .qc-root ::-webkit-scrollbar-thumb:hover { background: ${T.blue}; }
+
+        /* Mobile specific spacing fixes */
+        @media (max-width: 600px) {
+          .qc-root .qc-p-24 { padding: 16px !important; }
+          .qc-root .qc-modal-content { padding: 20px 16px !important; }
+        }
 
         /* Responsive CSS */
         @media (max-width: 900px) {
@@ -483,7 +501,6 @@ export default function QCReportSystemMain() {
       const primarySN = data.serial_numbers?.[0];
       if (primarySN) {
         reportId = String(primarySN).trim().toUpperCase();
-        // Check for uniqueness if it's a new report
         const exists = reports.some(r => String(r.id) === reportId);
         if (exists) {
           showToast("Serial number sudah terdaftar!", "err");
@@ -491,30 +508,44 @@ export default function QCReportSystemMain() {
           return;
         }
       } else {
-        // Fallback for batch reports without specific SNs
         reportId = `REP_${new Date().toISOString().replace(/[:.]/g, "-")}`;
       }
     }
 
-    // Default data structure
-    const reportData = {
-      ...data,
-      id: reportId,
-      updated_at: new Date().toISOString(),
-      updated_by: currentUser.name,
-    };
-
-    if (!isEdit) {
-      reportData.created_by = currentUser.name;
-      reportData.approval_status = "pending";
-    }
-
     try {
-      await setDoc(doc(db, "reports", reportId), reportData, { merge: true });
+      // Image Compression Logic for Report Images
+      const processedData = { ...data };
+      if (data.images && data.images.length > 0) {
+        showToast("🗜️ Mengompres gambar...", "ok");
+        const compressedImages = [];
+        for (const img of data.images) {
+          if (img instanceof File) {
+            const compressedBlob = await compressImage(img);
+            compressedImages.push(compressedBlob);
+          } else {
+            compressedImages.push(img);
+          }
+        }
+        
+        // Upload to Storage
+        showToast("📤 Mengunggah gambar...", "ok");
+        const urls = await uploadReportImages(compressedImages, reportId);
+        processedData.images = urls;
+      }
+
+      await setDoc(doc(db, "reports", reportId), {
+        ...processedData,
+        id: reportId,
+        updated_at: new Date().toISOString(),
+        updated_by: currentUser.name,
+        ...(isEdit ? {} : { created_by: currentUser.name, approval_status: "pending" })
+      }, { merge: true });
+
       logAction(isEdit ? "UPDATE_REPORT" : "CREATE_REPORT", reportId);
       showToast(isEdit ? "✅ Laporan diupdate!" : "✅ Laporan tersimpan!");
       setFormOpen(false);
-    } catch {
+    } catch (err) {
+      console.error("Save report fail:", err);
       showToast("Gagal menyimpan laporan!", "err");
     } finally {
       setSaving(false);
@@ -575,26 +606,24 @@ export default function QCReportSystemMain() {
   const handleAvatarSave = async (user, file) => {
     if (saving || !file || !user?.id) return;
     setSaving(true);
-    showToast("📤 Menyimpan foto profil...");
+    showToast("📤 Memproses foto profil...");
     try {
-      // Step 1: Convert to base64 immediately (guaranteed to work)
-      const base64 = await new Promise((resolve, reject) => {
-        const reader = new FileReader();
-        reader.onload = (e) => resolve(e.target.result);
-        reader.onerror = () => reject(new Error("Gagal membaca file"));
-        reader.readAsDataURL(file);
-      });
+      // Step 1: Compress image
+      const compressedBlob = await compressImage(file, 400, 400, 0.6);
+      
+      // Step 2: Convert to base64 for immediate Firestore storage (fallback)
+      const base64 = await blobToBase64(compressedBlob);
 
       if (!base64) throw new Error("Konversi gambar gagal");
 
-      // Step 2: Save base64 directly to Firestore (always works)
+      // Step 3: Save base64 directly to Firestore (reliable)
       await setDoc(
         doc(db, "users", String(user.id)),
         { avatar: base64 },
         { merge: true }
       );
 
-      // Step 3: Update local state immediately
+      // Update local state immediately
       if (currentUser?.id === user.id) {
         const updated = { ...currentUser, avatar: base64 };
         setCurrentUser(updated);
@@ -605,7 +634,8 @@ export default function QCReportSystemMain() {
       setUserFormOpen(false);
 
       // Step 4 (background): Try to also upload to Storage for better performance
-      uploadUserAvatar(file, String(user.id))
+      const compressedFile = new File([compressedBlob], "avatar.jpg", { type: "image/jpeg" });
+      uploadUserAvatar(compressedFile, String(user.id))
         .then((url) => {
           if (url) {
             setDoc(doc(db, "users", String(user.id)), { avatar: url }, { merge: true });

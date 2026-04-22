@@ -140,6 +140,7 @@ export const KpiCard = ({ colorKey, icon, label, value, sub }) => {
   const c = cmap[colorKey] || cmap.blue;
   return (
     <div
+      className="card-hover anim-fade-up"
       style={{
         background: T.surface,
         border: `1px solid ${T.border}`,
@@ -147,6 +148,7 @@ export const KpiCard = ({ colorKey, icon, label, value, sub }) => {
         padding: 20,
         position: "relative",
         overflow: "hidden",
+        transition: "all 0.3s ease",
       }}
     >
       <div
@@ -442,11 +444,13 @@ export const StatMini = ({ label, value, color = T.text }) => (
 /** Card */
 export const Card = ({ children, style = {} }) => (
   <div
+    className="card-hover"
     style={{
       background: T.surface,
       border: `1px solid ${T.border}`,
       borderRadius: T.r2,
       overflow: "hidden",
+      transition: "all 0.3s ease",
       ...style,
     }}
   >

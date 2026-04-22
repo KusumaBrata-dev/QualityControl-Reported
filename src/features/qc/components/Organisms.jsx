@@ -242,7 +242,7 @@ export const LoginOrganism = ({ users, onLogin, dbStats }) => {
             color: T.muted2,
           }}
         >
-          QC Report System V2.2.7
+          QC Report System V2.2.8
         </div>
       </div>
     </div>
